@@ -1,0 +1,375 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { api } from '../api/client';
+import { DEFAULT_STAGE, InquiryType, Priority, Source } from '../types';
+
+export default function NewInquiry() {
+  const navigate = useNavigate();
+  const [inquiryType, setInquiryType] = useState<InquiryType>('Borrower');
+  const [staff, setStaff] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getStaff().then(setStaff).catch(() => setStaff(['Amit Shah', 'Neha Kapoor', 'Rahul Verma']));
+  }, []);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    mobile: '',
+    email: '',
+    city: '',
+    source: 'Website' as Source,
+    priority: 'Warm' as Priority,
+    assignedTo: '',
+    referenceAgent: '',
+    notes: '',
+    loanAmount: '',
+    tenure: '',
+    proposedInterest: '',
+    investmentAmount: '',
+    expectedInterest: '',
+    investorTenure: '',
+  });
+
+  useEffect(() => {
+    if (staff.length && !formData.assignedTo) setFormData((f) => ({ ...f, assignedTo: staff[0] }));
+  }, [staff]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const now = new Date().toISOString().slice(0, 10);
+    const body = {
+      type: inquiryType,
+      name: formData.name,
+      mobile: formData.mobile,
+      email: formData.email,
+      city: formData.city,
+      source: formData.source,
+      priority: formData.priority,
+      assignedTo: formData.assignedTo || staff[0],
+      referenceAgent: formData.referenceAgent || undefined,
+      stage: DEFAULT_STAGE,
+      lastActivity: 'Just now',
+      createdAt: now,
+      notes: formData.notes,
+      ...(inquiryType === 'Borrower'
+        ? {
+            borrowerDetails: {
+              loanAmount: Number(formData.loanAmount) || 0,
+              tenure: Number(formData.tenure) || 0,
+              proposedInterest: Number(formData.proposedInterest) || 0,
+            },
+          }
+        : {
+            investorDetails: {
+              investmentAmount: Number(formData.investmentAmount) || 0,
+              expectedInterest: Number(formData.expectedInterest) || 0,
+              tenure: Number(formData.investorTenure) || 0,
+            },
+          }),
+    };
+    try {
+      await api.createInquiry(body);
+      navigate('/inquiries');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create inquiry');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <button
+          onClick={() => navigate('/inquiries')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 -ml-1"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm sm:text-base">Back to Inquiries</span>
+        </button>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">New Inquiry</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Add a new borrower or investor inquiry</p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Inquiry Type Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">Inquiry Type</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setInquiryType('Borrower')}
+                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${
+                  inquiryType === 'Borrower'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Borrower
+              </button>
+              <button
+                type="button"
+                onClick={() => setInquiryType('Investor')}
+                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${
+                  inquiryType === 'Investor'
+                    ? 'border-purple-600 bg-purple-50 text-purple-700 font-medium'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Investor
+              </button>
+            </div>
+          </div>
+
+          {/* Basic Information */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mobile <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="+91 xxxxx xxxxx"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="email@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter city"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                <select
+                  value={formData.source}
+                  onChange={(e) => setFormData({ ...formData, source: e.target.value as Source })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Website">Website</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Walk-in">Walk-in</option>
+                  <option value="Social Media">Social Media</option>
+                  <option value="Agent">Agent</option>
+                  <option value="Existing Client">Existing Client</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Hot">Hot</option>
+                  <option value="Warm">Warm</option>
+                  <option value="Cold">Cold</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
+                <select
+                  value={formData.assignedTo}
+                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {(staff.length ? staff : ['Amit Shah', 'Neha Kapoor', 'Rahul Verma']).map((member) => (
+                    <option key={member} value={member}>
+                      {member}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reference Agent (if any)</label>
+                <input
+                  type="text"
+                  value={formData.referenceAgent}
+                  onChange={(e) => setFormData({ ...formData, referenceAgent: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter agent name"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Borrower/Investor Specific Fields */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {inquiryType === 'Borrower' ? 'Loan Details' : 'Investment Details'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {inquiryType === 'Borrower' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Loan Amount Required (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.loanAmount}
+                      onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="500000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tenure (months)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.tenure}
+                      onChange={(e) => setFormData({ ...formData, tenure: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="12"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Proposed Interest Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={formData.proposedInterest}
+                      onChange={(e) => setFormData({ ...formData, proposedInterest: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="12.5"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Investment Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.investmentAmount}
+                      onChange={(e) => setFormData({ ...formData, investmentAmount: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="1000000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Expected Interest Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={formData.expectedInterest}
+                      onChange={(e) => setFormData({ ...formData, expectedInterest: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tenure (months)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.investorTenure}
+                      onChange={(e) => setFormData({ ...formData, investorTenure: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="12"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <div className="border-t pt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Add any additional notes or comments..."
+            />
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {submitting ? 'Creating...' : 'Create Inquiry'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/inquiries')}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
