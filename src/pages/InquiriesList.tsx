@@ -121,10 +121,10 @@ export default function InquiriesList() {
                   Stage
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assigned To
+                  Loan Amount
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Next Follow-up
+                  City
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -184,10 +184,14 @@ export default function InquiriesList() {
                     <span className="text-sm text-gray-900">{STAGE_LABELS[inquiry.stage] ?? inquiry.stage}</span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{inquiry.assignedTo}</span>
+                    <span className="text-sm text-gray-900">
+                      {inquiry.type === 'Borrower' && inquiry.borrowerDetails?.loanAmount != null
+                        ? `₹ ${Number(inquiry.borrowerDetails.loanAmount).toLocaleString('en-IN')}`
+                        : '—'}
+                    </span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{inquiry.nextFollowUp || 'Not set'}</span>
+                    <span className="text-sm text-gray-900">{inquiry.city || '—'}</span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <button

@@ -57,6 +57,7 @@ export interface Inquiry {
   referenceAgent?: string;
   stage: string;
   nextFollowUp?: string;
+  turnover?: string;
   lastActivity: string;
   lastActivityAt?: string;
   createdAt: string;

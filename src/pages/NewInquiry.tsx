@@ -7,13 +7,8 @@ import { DEFAULT_STAGE, InquiryType, Priority, Source } from '../types';
 export default function NewInquiry() {
   const navigate = useNavigate();
   const [inquiryType, setInquiryType] = useState<InquiryType>('Borrower');
-  const [staff, setStaff] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getStaff().then(setStaff).catch(() => setStaff(['Amit Shah', 'Neha Kapoor', 'Rahul Verma']));
-  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,8 +17,6 @@ export default function NewInquiry() {
     city: '',
     source: 'Website' as Source,
     priority: 'Warm' as Priority,
-    assignedTo: '',
-    referenceAgent: '',
     notes: '',
     loanAmount: '',
     tenure: '',
@@ -33,10 +26,6 @@ export default function NewInquiry() {
     investorTenure: '',
   });
 
-  useEffect(() => {
-    if (staff.length && !formData.assignedTo) setFormData((f) => ({ ...f, assignedTo: staff[0] }));
-  }, [staff]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -44,14 +33,13 @@ export default function NewInquiry() {
     const now = new Date().toISOString().slice(0, 10);
     const body = {
       type: inquiryType,
-      name: formData.name,
-      mobile: formData.mobile,
-      email: formData.email,
-      city: formData.city,
+      name: formData.name || '',
+      mobile: formData.mobile || '',
+      email: formData.email || '',
+      city: formData.city || '',
       source: formData.source,
       priority: formData.priority,
-      assignedTo: formData.assignedTo || staff[0],
-      referenceAgent: formData.referenceAgent || undefined,
+      assignedTo: '',
       stage: DEFAULT_STAGE,
       lastActivity: 'Just now',
       createdAt: now,
@@ -132,12 +120,9 @@ export default function NewInquiry() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                 <input
                   type="text"
-                  required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -146,12 +131,9 @@ export default function NewInquiry() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mobile</label>
                 <input
                   type="tel"
-                  required
                   value={formData.mobile}
                   onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -160,12 +142,9 @@ export default function NewInquiry() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -174,12 +153,9 @@ export default function NewInquiry() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
                 <input
                   type="text"
-                  required
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -216,31 +192,6 @@ export default function NewInquiry() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                <select
-                  value={formData.assignedTo}
-                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {(staff.length ? staff : ['Amit Shah', 'Neha Kapoor', 'Rahul Verma']).map((member) => (
-                    <option key={member} value={member}>
-                      {member}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reference Agent (if any)</label>
-                <input
-                  type="text"
-                  value={formData.referenceAgent}
-                  onChange={(e) => setFormData({ ...formData, referenceAgent: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter agent name"
-                />
-              </div>
             </div>
           </div>
 
