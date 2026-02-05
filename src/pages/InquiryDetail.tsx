@@ -76,7 +76,7 @@ export default function InquiryDetail() {
       .finally(() => setViewingPdfLoading(false));
   }, [id, viewingPdf?.docId]);
 
-  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_MB = 100; // Files ≤10 MB → Cloudinary; >10 MB → Supabase
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -549,7 +549,7 @@ export default function InquiryDetail() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.txt,image/*"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/*"
                 multiple
                 className="hidden"
                 onChange={handleUpload}
@@ -566,7 +566,7 @@ export default function InquiryDetail() {
                   <Upload className="w-5 h-5" />
                   {uploading ? 'Uploading…' : 'Upload Document'}
                 </button>
-                <p className="text-xs text-slate-500 mt-1.5 text-center">PDF, Word, text or images. Max 10 MB per file. Multiple files allowed.</p>
+                <p className="text-xs text-slate-500 mt-1.5 text-center">PDF, Word, Excel, text or images. Max {MAX_FILE_SIZE_MB} MB per file (larger files stored in Supabase). Multiple files allowed.</p>
               </div>
               {uploadError && <p className="text-sm text-rose-600 font-medium">{uploadError}</p>}
 
