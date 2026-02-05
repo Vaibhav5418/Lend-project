@@ -3,7 +3,6 @@ import { TrendingUp, Users, DollarSign, ArrowUp, ArrowDown, Wallet, Landmark } f
 import {
   BarChart,
   Bar,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -154,7 +153,7 @@ export default function Dashboard() {
                 <Tooltip
                   contentStyle={{ borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                  formatter={(value: number) => [value, 'Count']}
+                  formatter={(value: number | undefined) => [value ?? 0, 'Count']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ''}
                 />
                 <Area type="monotone" dataKey="inquiries" name="Inquiries" stroke="#0ea5e9" strokeWidth={2.5} fill="url(#fillInquiries)" />
@@ -186,7 +185,7 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.fill} stroke="#fff" strokeWidth={2} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [value, 'Count']} />
+                <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Count']} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -205,7 +204,7 @@ export default function Dashboard() {
               <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} stroke="#64748b" />
               <Tooltip
                 contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                formatter={(value: number) => [formatFunding(value), 'Amount']}
+                formatter={(value: number | undefined) => [formatFunding(value ?? 0), 'Amount']}
               />
               <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]} />
             </BarChart>
