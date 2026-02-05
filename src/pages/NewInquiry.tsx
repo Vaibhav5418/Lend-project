@@ -20,6 +20,7 @@ export default function NewInquiry() {
     notes: '',
     loanAmount: '',
     tenure: '',
+    turnover: '',
     proposedInterest: '',
     investmentAmount: '',
     expectedInterest: '',
@@ -44,6 +45,7 @@ export default function NewInquiry() {
       lastActivity: 'Just now',
       createdAt: now,
       notes: formData.notes,
+      turnover: formData.turnover || undefined,
       ...(inquiryType === 'Borrower'
         ? {
             borrowerDetails: {
@@ -226,6 +228,17 @@ export default function NewInquiry() {
                       onChange={(e) => setFormData({ ...formData, tenure: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="12"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Turnover (₹)</label>
+                    <input
+                      type="text"
+                      value={formData.turnover}
+                      onChange={(e) => setFormData({ ...formData, turnover: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g. 5000000"
                     />
                   </div>
 

@@ -5,6 +5,19 @@ import { api } from '../api/client';
 import { InquiryType, Priority, STAGE_LABELS } from '../types';
 import type { Inquiry } from '../types';
 
+function formatLoanAmount(amount: number): string {
+  if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(amount % 1_00_00_000 === 0 ? 0 : 1)} Cr`;
+  if (amount >= 1_00_000) return `₹ ${(amount / 1_00_000).toFixed(amount % 1_00_000 === 0 ? 0 : 1)} L`;
+  return `₹ ${amount.toLocaleString('en-IN')}`;
+}
+
+function formatTurnover(turnover: string | undefined): string {
+  if (!turnover || !turnover.trim()) return '—';
+  const num = Number(String(turnover).replace(/,/g, '').trim());
+  if (!Number.isNaN(num) && num >= 0) return formatLoanAmount(num);
+  return turnover;
+}
+
 export default function InquiriesList() {
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -124,6 +137,9 @@ export default function InquiriesList() {
                   Loan Amount
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Turnover
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   City
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -186,9 +202,12 @@ export default function InquiriesList() {
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">
                       {inquiry.type === 'Borrower' && inquiry.borrowerDetails?.loanAmount != null
-                        ? `₹ ${Number(inquiry.borrowerDetails.loanAmount).toLocaleString('en-IN')}`
+                        ? formatLoanAmount(Number(inquiry.borrowerDetails.loanAmount))
                         : '—'}
                     </span>
+                  </td>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{formatTurnover(inquiry.turnover)}</span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{inquiry.city || '—'}</span>

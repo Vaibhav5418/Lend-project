@@ -10,7 +10,6 @@ export default function EditInquiry() {
   const navigate = useNavigate();
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [staff, setStaff] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,20 +20,15 @@ export default function EditInquiry() {
     city: '',
     source: 'Website' as Source,
     priority: 'Warm' as Priority,
-    assignedTo: '',
-    referenceAgent: '',
     notes: '',
     loanAmount: '',
     tenure: '',
+    turnover: '',
     proposedInterest: '',
     investmentAmount: '',
     expectedInterest: '',
     investorTenure: '',
   });
-
-  useEffect(() => {
-    api.getStaff().then(setStaff).catch(() => setStaff(['Amit Shah', 'Neha Kapoor', 'Rahul Verma']));
-  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -49,11 +43,10 @@ export default function EditInquiry() {
           city: data.city ?? '',
           source: (data.source as Source) ?? 'Website',
           priority: (data.priority as Priority) ?? 'Warm',
-          assignedTo: data.assignedTo ?? '',
-          referenceAgent: data.referenceAgent ?? '',
           notes: data.notes ?? '',
           loanAmount: data.borrowerDetails?.loanAmount != null ? String(data.borrowerDetails.loanAmount) : '',
           tenure: data.borrowerDetails?.tenure != null ? String(data.borrowerDetails.tenure) : '',
+          turnover: data.turnover ?? '',
           proposedInterest: data.borrowerDetails?.proposedInterest != null ? String(data.borrowerDetails.proposedInterest) : '',
           investmentAmount: data.investorDetails?.investmentAmount != null ? String(data.investorDetails.investmentAmount) : '',
           expectedInterest: data.investorDetails?.expectedInterest != null ? String(data.investorDetails.expectedInterest) : '',
@@ -76,9 +69,9 @@ export default function EditInquiry() {
       city: formData.city,
       source: formData.source,
       priority: formData.priority,
-      assignedTo: formData.assignedTo || staff[0],
-      referenceAgent: formData.referenceAgent || undefined,
+      assignedTo: '',
       notes: formData.notes,
+      turnover: formData.turnover || undefined,
       ...(inquiry.type === 'Borrower'
         ? {
             borrowerDetails: {
@@ -201,34 +194,12 @@ export default function EditInquiry() {
                   <option value="Cold">Cold</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                <select
-                  value={formData.assignedTo}
-                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {(staff.length ? staff : ['Amit Shah', 'Neha Kapoor', 'Rahul Verma']).map((member) => (
-                    <option key={member} value={member}>{member}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reference Agent (if any)</label>
-                <input
-                  type="text"
-                  value={formData.referenceAgent}
-                  onChange={(e) => setFormData({ ...formData, referenceAgent: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter agent name"
-                />
-              </div>
             </div>
           </div>
 
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {inquiryType === 'Borrower' ? 'Loan Details' : 'Investment Details'}
+              {inquiry.type === 'Borrower' ? 'Loan Details' : 'Investment Details'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {inquiryType === 'Borrower' ? (
@@ -251,6 +222,16 @@ export default function EditInquiry() {
                       onChange={(e) => setFormData({ ...formData, tenure: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="12"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Turnover (₹)</label>
+                    <input
+                      type="text"
+                      value={formData.turnover}
+                      onChange={(e) => setFormData({ ...formData, turnover: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g. 5000000"
                     />
                   </div>
                   <div>

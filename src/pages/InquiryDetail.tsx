@@ -318,16 +318,6 @@ export default function InquiryDetail() {
                     <p className="text-sm font-medium text-slate-900">{STAGE_LABELS[inquiry.stage] ?? inquiry.stage}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Assigned To</p>
-                    <p className="text-sm font-medium text-slate-900">{inquiry.assignedTo}</p>
-                  </div>
-                  {inquiry.referenceAgent && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Reference Agent</p>
-                      <p className="text-sm font-medium text-slate-900">{inquiry.referenceAgent}</p>
-                    </div>
-                  )}
-                  <div>
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Created At</p>
                     <p className="text-sm font-medium text-slate-900">{inquiry.createdAt}</p>
                   </div>
@@ -355,6 +345,12 @@ export default function InquiryDetail() {
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Tenure</p>
                       <p className="text-sm font-medium text-slate-900">{inquiry.borrowerDetails.tenure} months</p>
                     </div>
+                    {inquiry.turnover && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Turnover</p>
+                        <p className="text-sm font-medium text-slate-900">{inquiry.turnover}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Proposed Interest</p>
                       <p className="text-sm font-medium text-slate-900">{inquiry.borrowerDetails.proposedInterest}% p.a.</p>
@@ -451,7 +447,6 @@ export default function InquiryDetail() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-slate-900">Current: {STAGE_LABELS[inquiry.stage] ?? inquiry.stage}</p>
-                      <p className="text-xs text-slate-500 mt-1">Assigned to {inquiry.assignedTo}</p>
                     </div>
                   </div>
                 </div>
