@@ -1,20 +1,13 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, Calendar, DollarSign } from 'lucide-react';
-import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import { INVESTOR_STAGES, STAGE_LABELS, type InvestorStage, type Inquiry } from '../types';
 
 const stages = [...INVESTOR_STAGES];
 
 export default function InvestorPipeline() {
   const navigate = useNavigate();
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getInquiries().then(setInquiries).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
+  const { inquiries, loading, error } = useInquiryCache();
 
   const investorInquiries = inquiries.filter((inq) => inq.type === 'Investor');
 

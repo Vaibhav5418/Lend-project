@@ -1,20 +1,13 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, Calendar, TrendingUp } from 'lucide-react';
-import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import { BORROWER_STAGES, STAGE_LABELS, type BorrowerStage, type Inquiry } from '../types';
 
 const stages = [...BORROWER_STAGES];
 
 export default function BorrowerPipeline() {
   const navigate = useNavigate();
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getInquiries().then(setInquiries).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
+  const { inquiries, loading, error } = useInquiryCache();
 
   const borrowerInquiries = inquiries.filter((inq) => inq.type === 'Borrower');
 

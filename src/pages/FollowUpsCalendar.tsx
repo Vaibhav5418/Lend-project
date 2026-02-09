@@ -1,17 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import type { Inquiry } from '../types';
 
 export default function FollowUpsCalendar() {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { inquiries, loading, error } = useInquiryCache();
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  useEffect(() => {
-    api.getInquiries().then(setInquiries).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();

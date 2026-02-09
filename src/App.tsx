@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import KeepAlive from './components/KeepAlive';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -21,6 +22,7 @@ import AllPages from './pages/AllPages';
 function App() {
   return (
     <BrowserRouter>
+      <KeepAlive />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

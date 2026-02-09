@@ -1,6 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const TOKEN_KEY = 'lendflow_token';
 
+/** Ping backend health to keep Render (and similar) from cold-starting. No auth. */
+export async function pingHealth(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/health`, { method: 'GET' });
+  } catch {
+    // Ignore; keep-alive is best-effort
+  }
+}
+
 export type InquiryDocument = {
   _id: string;
   inquiryId: string;

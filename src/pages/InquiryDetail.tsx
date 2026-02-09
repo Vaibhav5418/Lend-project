@@ -4,12 +4,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowLeft, Phone, Mail, MapPin, User, Flag, TrendingUp, Clock, Edit2, Trash2, FileText, Upload, ExternalLink, Sparkles } from 'lucide-react';
 import { api, type InquiryDocument } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import type { Inquiry } from '../types';
 import { STAGE_LABELS } from '../types';
 
 export default function InquiryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { refetch } = useInquiryCache();
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [documents, setDocuments] = useState<InquiryDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +152,7 @@ export default function InquiryDetail() {
     if (!window.confirm('Delete this inquiry? Click OK to delete. This cannot be undone.')) return;
     try {
       await api.deleteInquiry(id);
+      await refetch();
       navigate('/inquiries');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete inquiry');

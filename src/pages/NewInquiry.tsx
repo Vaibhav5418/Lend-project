@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import { DEFAULT_STAGE, InquiryType, Priority, Source } from '../types';
 
 export default function NewInquiry() {
   const navigate = useNavigate();
+  const { refetch } = useInquiryCache();
   const [inquiryType, setInquiryType] = useState<InquiryType>('Borrower');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export default function NewInquiry() {
     };
     try {
       await api.createInquiry(body);
+      await refetch();
       navigate('/inquiries');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create inquiry');

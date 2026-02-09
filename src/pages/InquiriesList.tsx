@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Eye, Phone, Mail } from 'lucide-react';
-import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
+import InquiriesListSkeleton from '../components/InquiriesListSkeleton';
 import { InquiryType, Priority, STAGE_LABELS } from '../types';
 import type { Inquiry } from '../types';
 
@@ -20,16 +21,10 @@ function formatTurnover(turnover: string | undefined): string {
 
 export default function InquiriesList() {
   const navigate = useNavigate();
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { inquiries, loading, error } = useInquiryCache();
   const [typeFilter, setTypeFilter] = useState<InquiryType | 'All'>('All');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    api.getInquiries().then(setInquiries).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
 
   const filteredInquiries = inquiries.filter((inquiry) => {
     const matchesType = typeFilter === 'All' || inquiry.type === typeFilter;
@@ -42,7 +37,7 @@ export default function InquiriesList() {
     return matchesType && matchesPriority && matchesSearch;
   });
 
-  if (loading) return <div className="p-6 text-gray-500">Loading inquiries...</div>;
+  if (loading) return <InquiriesListSkeleton />;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
   return (

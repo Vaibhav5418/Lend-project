@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { TrendingUp, Users, DollarSign, ArrowUp, ArrowDown, Wallet, Landmark } from 'lucide-react';
 import {
   BarChart,
@@ -16,7 +16,8 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import type { Inquiry } from '../types';
 
 const formatFunding = (amount: number): string => {
@@ -27,13 +28,7 @@ const formatFunding = (amount: number): string => {
 };
 
 export default function Dashboard() {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getInquiries().then(setInquiries).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
+  const { inquiries, loading, error } = useInquiryCache();
 
   const borrowers = inquiries.filter((i) => i.type === 'Borrower');
   const investors = inquiries.filter((i) => i.type === 'Investor');
@@ -94,7 +89,7 @@ export default function Dashboard() {
     [totalBorrowerFunding, totalInvestmentFunding]
   );
 
-  if (loading) return <div className="p-6 text-gray-500">Loading dashboard...</div>;
+  if (loading) return <DashboardSkeleton />;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
   return (

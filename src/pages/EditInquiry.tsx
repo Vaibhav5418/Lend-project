@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '../api/client';
+import { useInquiryCache } from '../context/InquiryCacheContext';
 import type { Inquiry } from '../types';
 import { InquiryType, Priority, Source } from '../types';
 
 export default function EditInquiry() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { refetch } = useInquiryCache();
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -90,6 +92,7 @@ export default function EditInquiry() {
     };
     try {
       await api.updateInquiry(id, body);
+      await refetch();
       navigate(`/inquiries/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update inquiry');
