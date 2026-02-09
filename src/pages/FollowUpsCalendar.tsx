@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
-import type { Inquiry } from '../types';
 
 export default function FollowUpsCalendar() {
   const { inquiries, loading, error } = useInquiryCache();

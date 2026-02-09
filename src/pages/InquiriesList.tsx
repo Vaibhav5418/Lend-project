@@ -4,7 +4,6 @@ import { Filter, Eye, Phone, Mail } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import InquiriesListSkeleton from '../components/InquiriesListSkeleton';
 import { InquiryType, Priority, STAGE_LABELS } from '../types';
-import type { Inquiry } from '../types';
 
 function formatLoanAmount(amount: number): string {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(amount % 1_00_00_000 === 0 ? 0 : 1)} Cr`;

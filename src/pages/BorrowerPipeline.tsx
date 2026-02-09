@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, Calendar, TrendingUp } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
-import { BORROWER_STAGES, STAGE_LABELS, type BorrowerStage, type Inquiry } from '../types';
+import { BORROWER_STAGES, STAGE_LABELS, type BorrowerStage } from '../types';
 
 const stages = [...BORROWER_STAGES];
 

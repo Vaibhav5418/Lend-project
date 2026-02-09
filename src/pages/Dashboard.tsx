@@ -18,7 +18,6 @@ import {
 } from 'recharts';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import DashboardSkeleton from '../components/DashboardSkeleton';
-import type { Inquiry } from '../types';
 
 const formatFunding = (amount: number): string => {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;

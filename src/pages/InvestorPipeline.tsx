@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, Calendar, DollarSign } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
-import { INVESTOR_STAGES, STAGE_LABELS, type InvestorStage, type Inquiry } from '../types';
+import { INVESTOR_STAGES, STAGE_LABELS, type InvestorStage } from '../types';
 
 const stages = [...INVESTOR_STAGES];
 
