@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Filter, Plus, CreditCard } from 'lucide-react';
+import { Plus, CreditCard } from 'lucide-react';
 import { api } from '../api/client';
 import type { InvestorPayment, InvestorInvestment, PaymentMode, PayoutFrequency } from '../types';
 
@@ -17,12 +17,18 @@ function formatDate(d: string | undefined): string {
 
 const PAYMENT_MODES: PaymentMode[] = ['Bank Transfer', 'Cheque', 'Cash', 'UPI', 'NEFT', 'RTGS', 'Other'];
 
+const STATUS_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
+  { key: 'Paid', label: 'Paid', color: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', cardBorder: 'border-l-emerald-500' },
+  { key: 'Pending', label: 'Pending', color: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', cardBorder: 'border-l-amber-500' },
+  { key: 'Overdue', label: 'Overdue', color: 'bg-red-50 border-red-200', dot: 'bg-red-500', cardBorder: 'border-l-red-500' },
+  { key: 'Partial', label: 'Partial', color: 'bg-blue-50 border-blue-200', dot: 'bg-blue-500', cardBorder: 'border-l-blue-500' },
+];
+
 export default function InvestorPayments() {
   const [payments, setPayments] = useState<InvestorPayment[]>([]);
   const [investments, setInvestments] = useState<InvestorInvestment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -100,13 +106,11 @@ export default function InvestorPayments() {
     }
   };
 
-  const filtered = payments
-    .filter((p) => statusFilter === 'All' || p.status === statusFilter)
-    .filter((p) => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return p.investorName.toLowerCase().includes(q) || p.investmentId.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
-    });
+  const filtered = payments.filter((p) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return p.investorName.toLowerCase().includes(q) || p.investmentId.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+  });
 
   const totalPaid = payments.filter(p => p.status === 'Paid').reduce((s, p) => s + p.amountPaid, 0);
   const totalPending = payments.filter(p => p.status === 'Pending' || p.status === 'Overdue').reduce((s, p) => s + p.pendingInterest, 0);
@@ -141,77 +145,67 @@ export default function InvestorPayments() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <span className="text-sm font-medium text-slate-700">Filters:</span>
-          </div>
-          <input
-            type="text"
-            placeholder="Search investor name or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-auto min-w-0 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm"
-          >
-            <option value="All">All Status</option>
-            <option value="Paid">Paid</option>
-            <option value="Pending">Pending</option>
-            <option value="Overdue">Overdue</option>
-          </select>
-        </div>
+        <input
+          type="text"
+          placeholder="Search investor name or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-80 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+        />
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden -mx-4 sm:mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[950px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Investment</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Investor</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Interest</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Principal</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Total</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Mode</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filtered.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-violet-600">{p.id}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{p.investmentId}</td>
-                  <td className="px-4 py-3 text-sm text-slate-900">{p.investorName}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{formatDate(p.paymentDate)}</td>
-                  <td className="px-4 py-3 text-sm text-emerald-700 font-medium">{formatAmount(p.interestPaid)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{formatAmount(p.principalPaid)}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">{formatAmount(p.amountPaid)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{p.paymentMode}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      p.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' :
-                      p.status === 'Overdue' ? 'bg-red-100 text-red-700' :
-                      p.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>{p.status}</span>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-500">No payments found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Kanban Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {STATUS_COLUMNS.map((col) => {
+          const items = filtered.filter((p) => p.status === col.key);
+          const colTotal = items.reduce((s, p) => s + p.amountPaid, 0);
+          return (
+            <div key={col.key} className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[70vh]`}>
+              {/* Column Header */}
+              <div className="px-4 py-3 border-b border-inherit">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
+                    <span className="text-sm font-semibold text-slate-800">{col.label}</span>
+                    <span className="text-xs bg-white/80 text-slate-600 font-medium px-1.5 py-0.5 rounded-full border border-slate-200">{items.length}</span>
+                  </div>
+                  {colTotal > 0 && <span className="text-xs font-semibold text-slate-600">{formatAmount(colTotal)}</span>}
+                </div>
+              </div>
+              {/* Column Cards */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {items.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-6">No payments</p>
+                )}
+                {items.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm p-3`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{p.investorName}</p>
+                        <p className="text-xs text-slate-500">{p.id} &middot; {p.investmentId}</p>
+                      </div>
+                    </div>
+                    <p className="text-base font-bold text-slate-900 mb-2">{formatAmount(p.amountPaid)}</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <div><span className="text-slate-400">Interest:</span> <span className="text-emerald-700 font-medium">{formatAmount(p.interestPaid)}</span></div>
+                      <div><span className="text-slate-400">Principal:</span> <span className="text-slate-700">{formatAmount(p.principalPaid)}</span></div>
+                      <div><span className="text-slate-400">Mode:</span> <span className="text-slate-700">{p.paymentMode}</span></div>
+                      <div><span className="text-slate-400">Date:</span> <span className="text-slate-700">{formatDate(p.paymentDate)}</span></div>
+                    </div>
+                    {p.remarks && (
+                      <p className="mt-2 text-xs text-slate-500 italic truncate">{p.remarks}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Record Payment Modal */}

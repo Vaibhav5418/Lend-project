@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Filter, Eye, Calendar, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { Calendar, TrendingUp, Users, AlertTriangle, Eye } from 'lucide-react';
 import { api } from '../api/client';
 import type { BorrowerLoan, UpcomingDue } from '../types';
 
@@ -15,12 +15,18 @@ function formatDate(d: string | undefined): string {
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+const STATUS_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
+  { key: 'Active', label: 'Active', color: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', cardBorder: 'border-l-emerald-500' },
+  { key: 'Closed', label: 'Closed', color: 'bg-slate-50 border-slate-200', dot: 'bg-slate-400', cardBorder: 'border-l-slate-400' },
+  { key: 'Defaulted', label: 'Defaulted', color: 'bg-red-50 border-red-200', dot: 'bg-red-500', cardBorder: 'border-l-red-500' },
+  { key: 'Restructured', label: 'Restructured', color: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', cardBorder: 'border-l-amber-500' },
+];
+
 export default function BorrowerLended() {
   const [loans, setLoans] = useState<BorrowerLoan[]>([]);
   const [upcomingDues, setUpcomingDues] = useState<UpcomingDue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<BorrowerLoan | null>(null);
 
@@ -41,13 +47,11 @@ export default function BorrowerLended() {
     }
   }
 
-  const filtered = loans
-    .filter((l) => statusFilter === 'All' || l.status === statusFilter)
-    .filter((l) => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return l.borrowerName.toLowerCase().includes(q) || l.id.toLowerCase().includes(q) || l.companyName?.toLowerCase().includes(q);
-    });
+  const filtered = loans.filter((l) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return l.borrowerName.toLowerCase().includes(q) || l.id.toLowerCase().includes(q) || l.companyName?.toLowerCase().includes(q);
+  });
 
   const totals = {
     deployed: loans.filter(l => l.status === 'Active').reduce((s, l) => s + l.approvedAmount, 0),
@@ -131,79 +135,71 @@ export default function BorrowerLended() {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <span className="text-sm font-medium text-slate-700">Filters:</span>
-          </div>
-          <input type="text" placeholder="Search borrower, loan ID, company..."
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-auto min-w-0 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
-            <option value="All">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Closed">Closed</option>
-            <option value="Defaulted">Defaulted</option>
-          </select>
-        </div>
+        <input
+          type="text"
+          placeholder="Search borrower, loan ID, company..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-80 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm"
+        />
       </div>
 
-      {/* Loans Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden -mx-4 sm:mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Borrower</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Rate</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Tenure</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Monthly Int.</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">End Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filtered.map((loan) => (
-                <tr key={loan.id} className="hover:bg-sky-50/40 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-sky-600">{loan.id}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-slate-900">{loan.borrowerName}</p>
-                    {loan.companyName && <p className="text-xs text-slate-500">{loan.companyName}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">{formatAmount(loan.approvedAmount)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-900">{loan.interestRate}% <span className="text-xs text-slate-500">({loan.interestRateType})</span></td>
-                  <td className="px-4 py-3 text-sm text-slate-900">{loan.tenureMonths} mo</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{loan.repaymentType}</td>
-                  <td className="px-4 py-3 text-sm text-emerald-700 font-medium">{formatAmount(loan.monthlyInterest)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{formatDate(loan.endDate)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      loan.status === 'Active' ? 'bg-emerald-100 text-emerald-700' :
-                      loan.status === 'Defaulted' ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>{loan.status}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => setSelectedLoan(loan)}
-                      className="text-slate-600 hover:text-slate-900 text-sm flex items-center gap-1">
-                      <Eye className="w-4 h-4" />Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-500">No loans found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Kanban Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {STATUS_COLUMNS.map((col) => {
+          const items = filtered.filter((l) => l.status === col.key);
+          const colTotal = items.reduce((s, l) => s + l.approvedAmount, 0);
+          return (
+            <div key={col.key} className={`flex-shrink-0 w-[320px] rounded-xl border ${col.color} flex flex-col max-h-[70vh]`}>
+              {/* Column Header */}
+              <div className="px-4 py-3 border-b border-inherit">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
+                    <span className="text-sm font-semibold text-slate-800">{col.label}</span>
+                    <span className="text-xs bg-white/80 text-slate-600 font-medium px-1.5 py-0.5 rounded-full border border-slate-200">{items.length}</span>
+                  </div>
+                  {colTotal > 0 && <span className="text-xs font-semibold text-slate-600">{formatAmount(colTotal)}</span>}
+                </div>
+              </div>
+              {/* Column Cards */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {items.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-6">No loans</p>
+                )}
+                {items.map((loan) => (
+                  <div
+                    key={loan.id}
+                    onClick={() => setSelectedLoan(loan)}
+                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-shadow cursor-pointer p-3`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{loan.borrowerName}</p>
+                        {loan.companyName && <p className="text-xs text-slate-500 truncate">{loan.companyName}</p>}
+                        <p className="text-xs text-sky-600 font-mono">{loan.id}</p>
+                      </div>
+                      <Eye className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                    </div>
+                    <p className="text-lg font-bold text-slate-900 mb-2">{formatAmount(loan.approvedAmount)}</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <div><span className="text-slate-400">Rate:</span> <span className="text-slate-700">{loan.interestRate}% ({loan.interestRateType})</span></div>
+                      <div><span className="text-slate-400">Tenure:</span> <span className="text-slate-700">{loan.tenureMonths} mo</span></div>
+                      <div><span className="text-slate-400">Type:</span> <span className="text-slate-700">{loan.repaymentType}</span></div>
+                      <div><span className="text-slate-400">Monthly:</span> <span className="text-emerald-700 font-medium">{formatAmount(loan.monthlyInterest)}</span></div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">End Date</span>
+                      <span className="text-slate-700 font-medium">{formatDate(loan.endDate)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Detail Modal with Repayment Schedule */}
