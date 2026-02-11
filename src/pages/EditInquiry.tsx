@@ -96,7 +96,7 @@ export default function EditInquiry() {
     try {
       await api.updateInquiry(id, body);
       await refetch();
-      navigate(`/inquiries/${id}`);
+      navigate(-1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update inquiry');
     } finally {
@@ -114,11 +114,11 @@ export default function EditInquiry() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <button
-          onClick={() => navigate(`/inquiries/${id}`)}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 -ml-1"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm sm:text-base">Back to Inquiry</span>
+          <span className="text-sm sm:text-base">Back</span>
         </button>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Edit Inquiry</h1>
         <p className="text-gray-600 mt-1 text-sm sm:text-base">{inquiry.id} · {inquiryType}</p>
@@ -325,7 +325,7 @@ export default function EditInquiry() {
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/inquiries/${id}`)}
+              onClick={() => navigate(-1)}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
               Cancel

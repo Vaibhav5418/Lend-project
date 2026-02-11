@@ -198,11 +198,11 @@ export default function InquiryDetail() {
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:gap-4 pb-4 sm:pb-6 border-b-2 border-sky-200/60">
         <button
-          onClick={() => navigate('/inquiries')}
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-sky-700 hover:text-sky-900 text-sm font-medium transition-colors w-fit -ml-1"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Inquiries
+          Back
         </button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-1 sm:pl-0">
           <div className="min-w-0">
