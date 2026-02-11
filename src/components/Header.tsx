@@ -1,4 +1,5 @@
-import { Search, Bell, Plus, LogOut, Menu } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Plus, LogOut, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,6 +18,8 @@ type HeaderProps = { onMenuClick: () => void };
 export default function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -35,18 +38,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <Menu className="w-6 h-6" />
         </button>
 
-        <div className="flex items-center flex-1 min-w-0 max-w-2xl">
-          <div className="relative w-full hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
-        </div>
+        <div className="flex-1 min-w-0" />
 
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+        <div className="relative flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
           <button
             onClick={() => navigate('/inquiries/new')}
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
@@ -55,9 +49,17 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <span className="hidden sm:inline">New Inquiry</span>
           </button>
 
-          <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Notifications">
+          <button
+            type="button"
+            onClick={() => {
+              setNotificationsOpen((open) => !open);
+              setHasUnread(false);
+            }}
+            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Notifications"
+          >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            {hasUnread && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
           </button>
 
           <div className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 md:pl-4 border-l border-gray-200">
@@ -79,6 +81,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <LogOut className="w-5 h-5" />
             </button>
           </div>
+
+          {notificationsOpen && (
+            <div className="absolute right-0 top-11 mt-1 w-72 bg-white border border-slate-200 rounded-lg shadow-lg py-2 z-20">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Notifications</p>
+              </div>
+              <div className="px-3 py-3">
+                <p className="text-sm text-slate-600">No new notifications right now.</p>
+                <p className="mt-1 text-xs text-slate-400">This panel is ready for future alerts.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -27,6 +27,7 @@ export default function NewInquiry() {
     investmentAmount: '',
     expectedInterest: '',
     investorTenure: '',
+    investorFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +62,7 @@ export default function NewInquiry() {
               investmentAmount: Number(formData.investmentAmount) || 0,
               expectedInterest: Number(formData.expectedInterest) || 0,
               tenure: Number(formData.investorTenure) || 0,
+              frequency: formData.investorFrequency,
             },
           }),
     };
@@ -299,6 +301,22 @@ export default function NewInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="12"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Frequency
+                    </label>
+                    <select
+                      value={formData.investorFrequency}
+                      onChange={(e) => setFormData({ ...formData, investorFrequency: e.target.value as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Half-Yearly">Half-Yearly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
                   </div>
                 </>
               )}

@@ -31,7 +31,6 @@ export default function Dashboard() {
 
   const borrowers = inquiries.filter((i) => i.type === 'Borrower');
   const investors = inquiries.filter((i) => i.type === 'Investor');
-  const todayFollowUps = inquiries.filter((inq) => inq.nextFollowUp);
 
   const totalBorrowerFunding = useMemo(
     () => borrowers.reduce((sum, b) => sum + (b.borrowerDetails?.loanAmount ?? 0), 0),
@@ -130,9 +129,9 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+        <div className="min-w-0 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
           <h3 className="text-base font-semibold text-slate-800 mb-4">Inquiry Trend (Last 14 Days)</h3>
-          <div className="h-72 sm:h-80">
+          <div className="w-full h-[300px] min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={inquiryTrendData} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
                 <defs>
@@ -159,9 +158,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+        <div className="min-w-0 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
           <h3 className="text-base font-semibold text-slate-800 mb-4">Pipeline Distribution</h3>
-          <div className="h-72 sm:h-80">
+          <div className="w-full h-[300px] min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -188,9 +187,9 @@ export default function Dashboard() {
       </div>
 
       {/* Funding bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+      <div className="min-w-0 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
         <h3 className="text-base font-semibold text-slate-800 mb-4">Funding Overview</h3>
-        <div className="h-56">
+        <div className="w-full h-[300px] min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={fundingBarData} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
@@ -203,54 +202,6 @@ export default function Dashboard() {
               <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Today's Follow-ups */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-slate-200">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-900">Today's Follow-ups</h3>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {todayFollowUps.length === 0 ? (
-            <div className="p-4 sm:p-6 text-slate-500 text-center text-sm sm:text-base">No follow-ups scheduled</div>
-          ) : (
-            todayFollowUps.map((inquiry) => (
-              <div key={inquiry.id} className="p-4 sm:p-6 hover:bg-slate-50/80 transition-colors">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                      <h4 className="font-semibold text-slate-900 truncate">{inquiry.name}</h4>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
-                          inquiry.type === 'Borrower' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'
-                        }`}
-                      >
-                        {inquiry.type}
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
-                          inquiry.priority === 'Hot'
-                            ? 'bg-rose-100 text-rose-700'
-                            : inquiry.priority === 'Warm'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {inquiry.priority}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 mt-1">{inquiry.mobile}</p>
-                    {inquiry.notes && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{inquiry.notes}</p>}
-                  </div>
-                  <div className="text-left sm:text-right shrink-0">
-                    <p className="text-sm font-medium text-slate-900">{inquiry.nextFollowUp}</p>
-                    {inquiry.assignedTo && <p className="text-sm text-slate-500 mt-1">Assigned to {inquiry.assignedTo}</p>}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       </div>
     </div>

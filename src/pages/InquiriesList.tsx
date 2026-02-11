@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Eye, Phone, Mail } from 'lucide-react';
+import { Filter, Eye, Phone, Mail, Pencil } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import InquiriesListSkeleton from '../components/InquiriesListSkeleton';
 import { InquiryType, Priority, STAGE_LABELS } from '../types';
@@ -207,17 +207,30 @@ export default function InquiriesList() {
                     <span className="text-sm text-gray-900">{inquiry.city || '—'}</span>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/inquiries/${inquiry.id}`);
-                      }}
-                      className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/inquiries/${inquiry.id}`);
+                        }}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/inquiries/${inquiry.id}/edit`);
+                        }}
+                        className="text-slate-500 hover:text-slate-700 font-medium text-sm flex items-center gap-1"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -6,7 +6,7 @@ import { ArrowLeft, Phone, Mail, MapPin, User, Flag, TrendingUp, Clock, Edit2, T
 import { api, type InquiryDocument } from '../api/client';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import type { Inquiry } from '../types';
-import { STAGE_LABELS } from '../types';
+import { STAGE_LABELS, type Priority } from '../types';
 
 export default function InquiryDetail() {
   const { id } = useParams();
@@ -28,6 +28,8 @@ export default function InquiryDetail() {
   const [profileScoreRating, setProfileScoreRating] = useState<string | null>(null);
   const [combinedReportLoading, setCombinedReportLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<'overview' | 'summary'>('overview');
+  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+  const [updatingPriority, setUpdatingPriority] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlRef = useRef<string | null>(null);
 
@@ -147,6 +149,21 @@ export default function InquiryDetail() {
     }
   };
 
+  const handleChangePriority = async (priority: Priority) => {
+    if (!id || !inquiry) return;
+    setUpdatingPriority(true);
+    try {
+      const updated = await api.updateInquiry(id, { priority });
+      setInquiry(updated);
+      await refetch();
+      setShowPriorityPicker(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update priority');
+    } finally {
+      setUpdatingPriority(false);
+    }
+  };
+
   const handleDeleteInquiry = async () => {
     if (!id) return;
     if (!window.confirm('Delete this inquiry? Click OK to delete. This cannot be undone.')) return;
@@ -218,7 +235,7 @@ export default function InquiryDetail() {
         {/* Left: Overview / Summary slider (2/3) */}
         <div className="lg:col-span-2 min-w-0">
       <div className="bg-white rounded-xl border border-violet-200/80 shadow-md overflow-hidden ring-1 ring-violet-100/50 h-full">
-        {/* Tab bar: Overview | Summary */}
+        {/* Tab bar: Overview | Summary (Summary hidden for Investor type) */}
         <div className="flex border-b border-violet-100 bg-gradient-to-r from-violet-50/80 to-white overflow-x-auto">
           <button
             type="button"
@@ -231,18 +248,20 @@ export default function InquiryDetail() {
           >
             Overview
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection('summary')}
-            className={`px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors border-b-2 -mb-px flex items-center gap-2 shrink-0 ${
-              activeSection === 'summary'
-                ? 'border-violet-600 text-violet-800 bg-white'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-violet-50/50'
-            }`}
-          >
-            Summary
-            {combinedReport && <span className="w-2 h-2 rounded-full bg-violet-500" title="Has summary" />}
-          </button>
+          {inquiry.type !== 'Investor' && (
+            <button
+              type="button"
+              onClick={() => setActiveSection('summary')}
+              className={`px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors border-b-2 -mb-px flex items-center gap-2 shrink-0 ${
+                activeSection === 'summary'
+                  ? 'border-violet-600 text-violet-800 bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-violet-50/50'
+              }`}
+            >
+              Summary
+              {combinedReport && <span className="w-2 h-2 rounded-full bg-violet-500" title="Has summary" />}
+            </button>
+          )}
         </div>
 
         {activeSection === 'overview' && (
@@ -381,6 +400,12 @@ export default function InquiryDetail() {
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Tenure</p>
                       <p className="text-sm font-medium text-slate-900">{inquiry.investorDetails.tenure} months</p>
                     </div>
+                    {inquiry.investorDetails.frequency && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Frequency</p>
+                        <p className="text-sm font-medium text-slate-900">{inquiry.investorDetails.frequency}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -516,10 +541,46 @@ export default function InquiryDetail() {
               <h2 className="text-xs sm:text-sm font-semibold text-violet-800 uppercase tracking-wider">Quick Actions</h2>
             </div>
             <div className="p-4 sm:p-6 space-y-3">
-              <button className="w-full px-4 py-2.5 rounded-lg border-2 border-amber-300 bg-amber-50 text-amber-800 text-sm font-semibold hover:bg-amber-100 hover:border-amber-400 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                <Flag className="w-4 h-4" />
-                Change Priority
-              </button>
+              {showPriorityPicker ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-slate-600 mb-2">Select priority</p>
+                  {(['Hot', 'Warm', 'Cold'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => handleChangePriority(p)}
+                      disabled={updatingPriority || inquiry?.priority === p}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
+                        inquiry?.priority === p
+                          ? 'border-amber-400 bg-amber-100 text-amber-900 cursor-default'
+                          : p === 'Hot'
+                            ? 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100'
+                            : p === 'Warm'
+                              ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                              : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowPriorityPicker(false)}
+                    className="w-full mt-2 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowPriorityPicker(true)}
+                  className="w-full px-4 py-2.5 rounded-lg border-2 border-amber-300 bg-amber-50 text-amber-800 text-sm font-semibold hover:bg-amber-100 hover:border-amber-400 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Flag className="w-4 h-4" />
+                  Change Priority
+                </button>
+              )}
             </div>
           </div>
 
@@ -530,7 +591,7 @@ export default function InquiryDetail() {
                 <span className="w-1 h-5 rounded-full bg-sky-500 flex-shrink-0" />
                 <span className="truncate">Documents</span>
               </h2>
-              {documents.length > 0 && (
+              {documents.length > 0 && inquiry.type !== 'Investor' && (
                 <button
                   type="button"
                   onClick={handleGenerateCombinedReport}
@@ -616,15 +677,17 @@ export default function InquiryDetail() {
                             )}
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateSummary(doc._id)}
-                              disabled={generatingDocId !== null}
-                              className="p-1.5 text-violet-600 hover:text-violet-800 hover:bg-violet-50 rounded-lg transition-colors disabled:opacity-50"
-                              title="Generate AI summary for this document"
-                            >
-                              <Sparkles className="w-4 h-4" />
-                            </button>
+                            {inquiry.type !== 'Investor' && (
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateSummary(doc._id)}
+                                disabled={generatingDocId !== null}
+                                className="p-1.5 text-violet-600 hover:text-violet-800 hover:bg-violet-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Generate AI summary for this document"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleDeleteDoc(doc._id)}

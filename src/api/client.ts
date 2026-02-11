@@ -92,4 +92,82 @@ export const api = {
       `/inquiries/${inquiryId}/documents/combined-report`,
       { method: 'POST' }
     ),
+
+  // ═══════════════════════════════════════════════════════════════
+  // INVESTOR INVESTMENTS
+  // ═══════════════════════════════════════════════════════════════
+  getInvestorInvestments: () =>
+    request<import('../types').InvestorInvestment[]>('/investor/investments'),
+  getInvestorInvestment: (id: string) =>
+    request<import('../types').InvestorInvestment>(`/investor/investments/${id}`),
+  createInvestorInvestment: (body: Partial<import('../types').InvestorInvestment>) =>
+    request<import('../types').InvestorInvestment>('/investor/investments', { method: 'POST', body: JSON.stringify(body) }),
+  updateInvestorInvestment: (id: string, body: Partial<import('../types').InvestorInvestment>) =>
+    request<import('../types').InvestorInvestment>(`/investor/investments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteInvestorInvestment: (id: string) =>
+    request<void>(`/investor/investments/${id}`, { method: 'DELETE' }),
+
+  // ═══════════════════════════════════════════════════════════════
+  // INVESTOR PAYMENTS
+  // ═══════════════════════════════════════════════════════════════
+  getInvestorPayments: (investmentId?: string) =>
+    request<import('../types').InvestorPayment[]>(`/investor/payments${investmentId ? `?investmentId=${investmentId}` : ''}`),
+  createInvestorPayment: (body: Partial<import('../types').InvestorPayment>) =>
+    request<import('../types').InvestorPayment>('/investor/payments', { method: 'POST', body: JSON.stringify(body) }),
+  updateInvestorPayment: (id: string, body: Partial<import('../types').InvestorPayment>) =>
+    request<import('../types').InvestorPayment>(`/investor/payments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteInvestorPayment: (id: string) =>
+    request<void>(`/investor/payments/${id}`, { method: 'DELETE' }),
+
+  getUpcomingPayouts: () =>
+    request<import('../types').UpcomingPayout[]>('/investor/upcoming-payouts'),
+
+  // ═══════════════════════════════════════════════════════════════
+  // BORROWER LOANS
+  // ═══════════════════════════════════════════════════════════════
+  getBorrowerLoans: () =>
+    request<import('../types').BorrowerLoan[]>('/borrower/loans'),
+  getBorrowerLoan: (id: string) =>
+    request<import('../types').BorrowerLoan>(`/borrower/loans/${id}`),
+  createBorrowerLoan: (body: Partial<import('../types').BorrowerLoan>) =>
+    request<import('../types').BorrowerLoan>('/borrower/loans', { method: 'POST', body: JSON.stringify(body) }),
+  updateBorrowerLoan: (id: string, body: Partial<import('../types').BorrowerLoan>) =>
+    request<import('../types').BorrowerLoan>(`/borrower/loans/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteBorrowerLoan: (id: string) =>
+    request<void>(`/borrower/loans/${id}`, { method: 'DELETE' }),
+
+  // ═══════════════════════════════════════════════════════════════
+  // BORROWER COLLECTIONS
+  // ═══════════════════════════════════════════════════════════════
+  getBorrowerCollections: (loanId?: string) =>
+    request<import('../types').BorrowerCollection[]>(`/borrower/collections${loanId ? `?loanId=${loanId}` : ''}`),
+  createBorrowerCollection: (body: Partial<import('../types').BorrowerCollection>) =>
+    request<import('../types').BorrowerCollection>('/borrower/collections', { method: 'POST', body: JSON.stringify(body) }),
+  updateBorrowerCollection: (id: string, body: Partial<import('../types').BorrowerCollection>) =>
+    request<import('../types').BorrowerCollection>(`/borrower/collections/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteBorrowerCollection: (id: string) =>
+    request<void>(`/borrower/collections/${id}`, { method: 'DELETE' }),
+
+  getUpcomingDues: () =>
+    request<import('../types').UpcomingDue[]>('/borrower/upcoming-dues'),
+
+  // ═══════════════════════════════════════════════════════════════
+  // PROPOSALS
+  // ═══════════════════════════════════════════════════════════════
+  getProposals: (inquiryId?: string) =>
+    request<import('../types').Proposal[]>(`/proposals${inquiryId ? `?inquiryId=${inquiryId}` : ''}`),
+  getProposal: (id: string) =>
+    request<import('../types').Proposal>(`/proposals/${id}`),
+  createProposal: (body: Partial<import('../types').Proposal>) =>
+    request<import('../types').Proposal>('/proposals', { method: 'POST', body: JSON.stringify(body) }),
+  updateProposalStatus: (id: string, body: { status: string; proposedLoanAmount?: number; proposedInterestRate?: number; proposedTenure?: number; notes?: string }) =>
+    request<import('../types').Proposal>(`/proposals/${id}/status`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteProposal: (id: string) =>
+    request<void>(`/proposals/${id}`, { method: 'DELETE' }),
+
+  // ═══════════════════════════════════════════════════════════════
+  // PROFIT ENGINE
+  // ═══════════════════════════════════════════════════════════════
+  getProfitDashboard: () =>
+    request<import('../types').ProfitDashboardData>('/profit/dashboard'),
 };
