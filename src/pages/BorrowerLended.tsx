@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Filter, Eye, Calendar, TrendingUp, Users, AlertTriangle, Receipt } from 'lucide-react';
 import { api } from '../api/client';
-import type { BorrowerLoan, BorrowerCollection, UpcomingDue, PaymentMode, CollectionStatus } from '../types';
+import type { BorrowerLoan, UpcomingDue, PaymentMode, CollectionStatus } from '../types';
 
 const PAYMENT_MODES: PaymentMode[] = ['Bank Transfer', 'Cheque', 'Cash', 'UPI', 'NEFT', 'RTGS', 'Other'];
 
