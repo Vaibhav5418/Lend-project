@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Users, Eye } from 'lucide-react';
+import { Filter, Eye, Calendar, TrendingUp, Users, CreditCard } from 'lucide-react';
 import { api } from '../api/client';
-import type { InvestorInvestment, UpcomingPayout } from '../types';
+import type { InvestorInvestment, InvestorPayment, UpcomingPayout, PaymentMode } from '../types';
+
+const PAYMENT_MODES: PaymentMode[] = ['Bank Transfer', 'Cheque', 'Cash', 'UPI', 'NEFT', 'RTGS', 'Other'];
 
 function formatAmount(amount: number): string {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
@@ -15,20 +17,26 @@ function formatDate(d: string | undefined): string {
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-const STATUS_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
-  { key: 'Active', label: 'Active', color: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', cardBorder: 'border-l-emerald-500' },
-  { key: 'Matured', label: 'Matured', color: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', cardBorder: 'border-l-amber-500' },
-  { key: 'Closed', label: 'Closed', color: 'bg-slate-50 border-slate-200', dot: 'bg-slate-400', cardBorder: 'border-l-slate-400' },
-  { key: 'Withdrawn', label: 'Withdrawn', color: 'bg-red-50 border-red-200', dot: 'bg-red-400', cardBorder: 'border-l-red-400' },
-];
-
 export default function InvestorBorrowed() {
   const [investments, setInvestments] = useState<InvestorInvestment[]>([]);
   const [upcomingPayouts, setUpcomingPayouts] = useState<UpcomingPayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInv, setSelectedInv] = useState<InvestorInvestment | null>(null);
+  const [paymentInv, setPaymentInv] = useState<InvestorInvestment | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [payForm, setPayForm] = useState({
+    paymentDate: new Date().toISOString().slice(0, 10),
+    dueDate: '',
+    interestPaid: '',
+    principalPaid: '',
+    pendingInterest: '',
+    paymentMode: 'Bank Transfer' as PaymentMode,
+    status: 'Paid' as string,
+    remarks: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -49,11 +57,54 @@ export default function InvestorBorrowed() {
     }
   }
 
-  const filtered = investments.filter((i) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return i.investorName.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
-  });
+  const openPaymentModal = (inv: InvestorInvestment) => {
+    setPayForm({
+      paymentDate: new Date().toISOString().slice(0, 10),
+      dueDate: '',
+      interestPaid: String(inv.monthlyInterest || ''),
+      principalPaid: '',
+      pendingInterest: '',
+      paymentMode: 'Bank Transfer',
+      status: 'Paid',
+      remarks: '',
+    });
+    setPaymentInv(inv);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!paymentInv) return;
+    setSubmittingPayment(true);
+    try {
+      await api.createInvestorPayment({
+        investmentId: paymentInv.id,
+        investorName: paymentInv.investorName,
+        paymentDate: payForm.paymentDate,
+        dueDate: payForm.dueDate || undefined,
+        amountPaid: (Number(payForm.interestPaid) || 0) + (Number(payForm.principalPaid) || 0),
+        interestPaid: Number(payForm.interestPaid) || 0,
+        principalPaid: Number(payForm.principalPaid) || 0,
+        pendingInterest: Number(payForm.pendingInterest) || 0,
+        paymentFrequency: paymentInv.payoutFrequency || 'monthly',
+        paymentMode: payForm.paymentMode,
+        status: payForm.status as InvestorPayment['status'],
+        remarks: payForm.remarks,
+      });
+      await loadData();
+      setPaymentInv(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to record payment');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
+  const filtered = investments
+    .filter((i) => statusFilter === 'All' || i.status === statusFilter)
+    .filter((i) => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return i.investorName.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
+    });
 
   const totals = {
     invested: investments.filter(i => i.status === 'Active').reduce((s, i) => s + i.investedAmount, 0),
@@ -121,70 +172,102 @@ export default function InvestorBorrowed() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-4">
-        <input
-          type="text"
-          placeholder="Search investor name or ID..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-80 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-slate-500" />
+            <span className="text-sm font-medium text-slate-700">Filters:</span>
+          </div>
+          <input
+            type="text"
+            placeholder="Search investor name or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-auto min-w-0 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+          >
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Matured">Matured</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {STATUS_COLUMNS.map((col) => {
-          const items = filtered.filter((i) => i.status === col.key);
-          const colTotal = items.reduce((s, i) => s + i.investedAmount, 0);
-          return (
-            <div key={col.key} className={`flex-shrink-0 w-[320px] rounded-xl border ${col.color} flex flex-col max-h-[70vh]`}>
-              {/* Column Header */}
-              <div className="px-4 py-3 border-b border-inherit">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
-                    <span className="text-sm font-semibold text-slate-800">{col.label}</span>
-                    <span className="text-xs bg-white/80 text-slate-600 font-medium px-1.5 py-0.5 rounded-full border border-slate-200">{items.length}</span>
-                  </div>
-                  {colTotal > 0 && <span className="text-xs font-semibold text-slate-600">{formatAmount(colTotal)}</span>}
-                </div>
-              </div>
-              {/* Column Cards */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                {items.length === 0 && (
-                  <p className="text-xs text-slate-400 text-center py-6">No investments</p>
-                )}
-                {items.map((inv) => (
-                  <div
-                    key={inv.id}
-                    onClick={() => setSelectedInv(inv)}
-                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-shadow cursor-pointer p-3`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{inv.investorName}</p>
-                        <p className="text-xs text-violet-600 font-mono">{inv.id}</p>
-                      </div>
-                      <Eye className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+      {/* Table */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden -mx-4 sm:mx-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px]">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Investor</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Invested</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Rate</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Tenure</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Monthly Int.</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Payout Freq.</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Maturity</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filtered.map((inv) => (
+                <tr key={inv.id} className="hover:bg-violet-50/40 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-violet-600">{inv.id}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-slate-900">{inv.investorName}</p>
+                    <p className="text-xs text-slate-500">{inv.email}</p>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-900">{formatAmount(inv.investedAmount)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
+                    {inv.interestRate}% <span className="text-xs text-slate-500">({inv.interestRateType})</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{inv.tenureMonths} mo</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-emerald-700 font-medium">{formatAmount(inv.monthlyInterest)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 capitalize">{inv.payoutFrequency?.replace('_', ' ')}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatDate(inv.maturityDate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      inv.status === 'Active' ? 'bg-emerald-100 text-emerald-700' :
+                      inv.status === 'Matured' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>{inv.status}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedInv(inv)}
+                        className="text-slate-600 hover:text-slate-900 text-sm flex items-center gap-1"
+                      >
+                        <Eye className="w-4 h-4" />Details
+                      </button>
+                      {inv.status === 'Active' && (
+                        <button
+                          onClick={() => openPaymentModal(inv)}
+                          className="text-violet-600 hover:text-violet-800 text-sm flex items-center gap-1"
+                        >
+                          <CreditCard className="w-4 h-4" />Pay
+                        </button>
+                      )}
                     </div>
-                    <p className="text-lg font-bold text-slate-900 mb-2">{formatAmount(inv.investedAmount)}</p>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                      <div><span className="text-slate-400">Rate:</span> <span className="text-slate-700">{inv.interestRate}% ({inv.interestRateType})</span></div>
-                      <div><span className="text-slate-400">Tenure:</span> <span className="text-slate-700">{inv.tenureMonths} mo</span></div>
-                      <div><span className="text-slate-400">Monthly:</span> <span className="text-emerald-700 font-medium">{formatAmount(inv.monthlyInterest)}</span></div>
-                      <div><span className="text-slate-400">Freq:</span> <span className="text-slate-700 capitalize">{inv.payoutFrequency?.replace('_', ' ')}</span></div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-slate-400">Maturity</span>
-                      <span className="text-slate-700 font-medium">{formatDate(inv.maturityDate)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">No investments found</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Detail Modal */}
@@ -217,7 +300,7 @@ export default function InvestorBorrowed() {
               const freq = selectedInv.payoutFrequency || 'monthly';
               const intervalMonths = freq === 'quarterly' ? 3 : freq === 'on_maturity' ? selectedInv.tenureMonths : 1;
               const interestPerMonth = selectedInv.monthlyInterest;
-              const steps = intervalMonths > 0 ? Math.ceil(selectedInv.tenureMonths / intervalMonths) : 0;
+              const steps = Math.ceil(selectedInv.tenureMonths / intervalMonths);
 
               for (let i = 1; i <= steps; i++) {
                 const monthNum = i * intervalMonths;
@@ -306,6 +389,72 @@ export default function InvestorBorrowed() {
                 <p className="text-sm text-slate-600">{selectedInv.notes}</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Record Payment Modal */}
+      {paymentInv && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />Record Payment
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {paymentInv.investorName} &mdash; {paymentInv.id} ({formatAmount(paymentInv.investedAmount)})
+            </p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Payment Date</label>
+                  <input type="date" value={payForm.paymentDate} onChange={(e) => setPayForm({ ...payForm, paymentDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
+                  <input type="date" value={payForm.dueDate} onChange={(e) => setPayForm({ ...payForm, dueDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Interest Paid (₹)</label>
+                  <input type="number" value={payForm.interestPaid} onChange={(e) => setPayForm({ ...payForm, interestPaid: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Principal Paid (₹)</label>
+                  <input type="number" value={payForm.principalPaid} onChange={(e) => setPayForm({ ...payForm, principalPaid: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="0 (on maturity)" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Payment Mode</label>
+                  <select value={payForm.paymentMode} onChange={(e) => setPayForm({ ...payForm, paymentMode: e.target.value as PaymentMode })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    {PAYMENT_MODES.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                  <select value={payForm.status} onChange={(e) => setPayForm({ ...payForm, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Partial">Partial</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Remarks</label>
+                <textarea value={payForm.remarks} onChange={(e) => setPayForm({ ...payForm, remarks: e.target.value })} rows={2}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setPaymentInv(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 text-sm font-medium">Cancel</button>
+              <button onClick={handleRecordPayment} disabled={submittingPayment}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium disabled:opacity-50">
+                {submittingPayment ? 'Recording...' : 'Record Payment'}
+              </button>
+            </div>
           </div>
         </div>
       )}

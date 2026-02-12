@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Eye, Phone, Mail, CheckCircle, Pencil } from 'lucide-react';
+import { Eye, Phone, Mail, Pencil, GripVertical } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import { api } from '../api/client';
-import { STAGE_LABELS } from '../types';
 import type { Inquiry } from '../types';
 
 function formatAmount(amount: number): string {
@@ -13,13 +12,24 @@ function formatAmount(amount: number): string {
   return `₹ ${amount.toLocaleString('en-IN')}`;
 }
 
+const STAGE_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
+  { key: 'NEW', label: 'New', color: 'bg-blue-50 border-blue-200', dot: 'bg-blue-500', cardBorder: 'border-l-blue-500' },
+  { key: 'CONTACTED', label: 'Contacted', color: 'bg-sky-50 border-sky-200', dot: 'bg-sky-500', cardBorder: 'border-l-sky-500' },
+  { key: 'RATE_DISCUSSED', label: 'Rate Discussed', color: 'bg-violet-50 border-violet-200', dot: 'bg-violet-500', cardBorder: 'border-l-violet-500' },
+  { key: 'AGREEMENT_DONE', label: 'Accept / Agreement Done', color: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', cardBorder: 'border-l-amber-500' },
+  { key: 'FUND_RECEIVED', label: 'Fund Received', color: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', cardBorder: 'border-l-emerald-500' },
+];
+
 export default function InvestorInquiries() {
   const navigate = useNavigate();
   const { inquiries, loading, error, refetch } = useInquiryCache();
   const [searchQuery, setSearchQuery] = useState('');
-  const [stageFilter, setStageFilter] = useState<string>('All');
   const [accepting, setAccepting] = useState<string | null>(null);
   const [showAcceptModal, setShowAcceptModal] = useState<Inquiry | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [stageUpdating, setStageUpdating] = useState<string | null>(null);
+  const dragCounter = useRef<Record<string, number>>({});
   const [acceptForm, setAcceptForm] = useState({
     interestRate: '',
     interestRateType: 'yearly' as 'monthly' | 'yearly',
@@ -32,7 +42,6 @@ export default function InvestorInquiries() {
 
   const investorInquiries = inquiries
     .filter((i) => i.type === 'Investor')
-    .filter((i) => stageFilter === 'All' || i.stage === stageFilter)
     .filter((i) => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
@@ -66,6 +75,84 @@ export default function InvestorInquiries() {
     }
   };
 
+  const openAcceptModal = (inq: Inquiry) => {
+    const freqMap: Record<string, 'monthly' | 'quarterly' | 'on_maturity'> = {
+      'Monthly': 'monthly',
+      'Quarterly': 'quarterly',
+      'Half-Yearly': 'on_maturity',
+      'Yearly': 'on_maturity',
+    };
+    setAcceptForm({
+      interestRate: String(inq.investorDetails?.expectedInterest || ''),
+      interestRateType: 'yearly',
+      tenureMonths: String(inq.investorDetails?.tenure || ''),
+      investmentPlan: 'custom',
+      payoutFrequency: freqMap[inq.investorDetails?.frequency || ''] || 'monthly',
+      startDate: new Date().toISOString().slice(0, 10),
+      notes: '',
+    });
+    setShowAcceptModal(inq);
+  };
+
+  // ─── Drag & Drop handlers ─────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, inqId: string) => {
+    setDraggingId(inqId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', inqId);
+  };
+
+  const handleDragEnter = (e: React.DragEvent, colKey: string) => {
+    e.preventDefault();
+    dragCounter.current[colKey] = (dragCounter.current[colKey] || 0) + 1;
+    setDragOverCol(colKey);
+  };
+
+  const handleDragLeave = (_e: React.DragEvent, colKey: string) => {
+    dragCounter.current[colKey] = (dragCounter.current[colKey] || 0) - 1;
+    if (dragCounter.current[colKey] <= 0) {
+      dragCounter.current[colKey] = 0;
+      if (dragOverCol === colKey) setDragOverCol(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStage: string) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    dragCounter.current = {};
+    const inqId = e.dataTransfer.getData('text/plain');
+    setDraggingId(null);
+    if (!inqId) return;
+    const inq = investorInquiries.find((i) => i.id === inqId);
+    if (!inq || inq.stage === targetStage) return;
+
+    // Dropping on "Accept / Agreement Done" → open accept modal to create investment
+    if (targetStage === 'AGREEMENT_DONE') {
+      openAcceptModal(inq);
+      return;
+    }
+
+    setStageUpdating(inqId);
+    try {
+      await api.updateInquiryStage(inqId, targetStage);
+      await refetch();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update stage');
+    } finally {
+      setStageUpdating(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDragOverCol(null);
+    dragCounter.current = {};
+  };
+
   if (loading) return <div className="p-6 text-slate-500">Loading investor inquiries...</div>;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
@@ -76,146 +163,119 @@ export default function InvestorInquiries() {
         <p className="text-slate-600 mt-1 text-sm">Manage investor intent and fund acceptance</p>
       </div>
 
-      {/* Filters */}
+      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-500" />
-            <span className="text-sm font-medium text-slate-700">Filters:</span>
-          </div>
-          <input
-            type="text"
-            placeholder="Search name, mobile, email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-auto min-w-0 px-3 py-2 sm:py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
-          />
-          <select
-            value={stageFilter}
-            onChange={(e) => setStageFilter(e.target.value)}
-            className="px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
-          >
-            <option value="All">All Stages</option>
-            <option value="NEW">New</option>
-            <option value="CONTACTED">Contacted</option>
-            <option value="RATE_DISCUSSED">Rate Discussed</option>
-            <option value="AGREEMENT_DONE">Agreement Done</option>
-            <option value="FUND_RECEIVED">Fund Received</option>
-          </select>
-        </div>
+        <input
+          type="text"
+          placeholder="Search name, mobile, email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-80 px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+        />
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden -mx-4 sm:mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Investor</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Expected Rate</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Tenure</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Frequency</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Stage</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Priority</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {investorInquiries.map((inq) => (
-                <tr key={inq.id} className="hover:bg-violet-50/40 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm font-medium text-violet-600">{inq.id}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-slate-900">{inq.name}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
-                        <Phone className="w-3 h-3" />{inq.mobile}
-                      </span>
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
-                        <Mail className="w-3 h-3" />{inq.email}
-                      </span>
+      {/* Kanban Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {STAGE_COLUMNS.map((col) => {
+          const items = investorInquiries.filter((i) => i.stage === col.key);
+          const colTotal = items.reduce((s, i) => s + (i.investorDetails?.investmentAmount || 0), 0);
+          return (
+            <div
+              key={col.key}
+              onDragEnter={(e) => handleDragEnter(e, col.key)}
+              onDragLeave={(e) => handleDragLeave(e, col.key)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, col.key)}
+              className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[75vh] transition-all duration-150 ${
+                dragOverCol === col.key && draggingId ? 'ring-2 ring-violet-400 ring-offset-2 scale-[1.01]' : ''
+              }`}
+            >
+              {/* Column Header */}
+              <div className="px-4 py-3 border-b border-inherit">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
+                    <span className="text-sm font-semibold text-slate-800">{col.label}</span>
+                    <span className="text-xs bg-white/80 text-slate-600 font-medium px-1.5 py-0.5 rounded-full border border-slate-200">{items.length}</span>
+                  </div>
+                  {colTotal > 0 && <span className="text-xs font-semibold text-slate-600">{formatAmount(colTotal)}</span>}
+                </div>
+              </div>
+              {/* Cards */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {items.length === 0 && (
+                  <p className={`text-xs text-center py-6 ${dragOverCol === col.key && draggingId ? 'text-violet-500 font-medium' : 'text-slate-400'}`}>
+                    {dragOverCol === col.key && draggingId ? 'Drop here' : 'No inquiries'}
+                  </p>
+                )}
+                {items.map((inq) => (
+                  <div
+                    key={inq.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, inq.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-all p-3 ${
+                      draggingId === inq.id ? 'opacity-40 scale-95' : ''
+                    } ${stageUpdating === inq.id ? 'opacity-60 pointer-events-none' : ''} cursor-grab active:cursor-grabbing`}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-1 mb-1.5">
+                      <div className="flex items-start gap-1 min-w-0">
+                        <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{inq.name}</p>
+                          <p className="text-xs text-violet-600 font-mono">{inq.id}</p>
+                        </div>
+                      </div>
+                      <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
+                        inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>{inq.priority}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                    {inq.investorDetails?.investmentAmount ? formatAmount(inq.investorDetails.investmentAmount) : '—'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                    {inq.investorDetails?.expectedInterest ? `${inq.investorDetails.expectedInterest}%` : '—'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                    {inq.investorDetails?.tenure ? `${inq.investorDetails.tenure} mo` : '—'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                    {inq.investorDetails?.frequency || '—'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
-                      {STAGE_LABELS[inq.stage] ?? inq.stage}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
-                      inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>{inq.priority}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+                    {stageUpdating === inq.id && (
+                      <p className="text-xs text-violet-600 font-medium mb-1">Moving...</p>
+                    )}
+
+                    {/* Contact */}
+                    <div className="flex flex-col gap-0.5 mb-2 text-xs text-slate-500">
+                      <span className="flex items-center gap-1 truncate"><Phone className="w-3 h-3 flex-shrink-0" />{inq.mobile}</span>
+                      <span className="flex items-center gap-1 truncate"><Mail className="w-3 h-3 flex-shrink-0" />{inq.email}</span>
+                    </div>
+
+                    {/* Details */}
+                    {inq.investorDetails && (
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs mb-2">
+                        <div><span className="text-slate-400">Amount:</span> <span className="text-slate-800 font-semibold">{formatAmount(inq.investorDetails.investmentAmount)}</span></div>
+                        <div><span className="text-slate-400">Rate:</span> <span className="text-slate-700">{inq.investorDetails.expectedInterest}%</span></div>
+                        <div><span className="text-slate-400">Tenure:</span> <span className="text-slate-700">{inq.investorDetails.tenure} mo</span></div>
+                        {inq.investorDetails.frequency && (
+                          <div><span className="text-slate-400">Freq:</span> <span className="text-slate-700">{inq.investorDetails.frequency}</span></div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100">
                       <button
                         onClick={() => navigate(`/inquiries/${inq.id}`)}
-                        className="text-slate-600 hover:text-slate-900 text-sm flex items-center gap-1"
+                        className="text-slate-500 hover:text-slate-800 text-xs flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-slate-100 transition-colors"
                       >
-                        <Eye className="w-4 h-4" />View
+                        <Eye className="w-3.5 h-3.5" />View
                       </button>
                       <button
                         onClick={() => navigate(`/inquiries/${inq.id}/edit`)}
-                        className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1"
+                        className="text-slate-500 hover:text-slate-800 text-xs flex items-center gap-0.5 px-1.5 py-1 rounded hover:bg-slate-100 transition-colors"
                       >
-                        <Pencil className="w-4 h-4" />Edit
+                        <Pencil className="w-3.5 h-3.5" />Edit
                       </button>
-                      {inq.stage !== 'FUND_RECEIVED' && (
-                        <button
-                          onClick={() => {
-                            const freqMap: Record<string, 'monthly' | 'quarterly' | 'on_maturity'> = {
-                              'Monthly': 'monthly',
-                              'Quarterly': 'quarterly',
-                              'Half-Yearly': 'on_maturity',
-                              'Yearly': 'on_maturity',
-                            };
-                            setAcceptForm({
-                              interestRate: String(inq.investorDetails?.expectedInterest || ''),
-                              interestRateType: 'yearly',
-                              tenureMonths: String(inq.investorDetails?.tenure || ''),
-                              investmentPlan: 'custom',
-                              payoutFrequency: freqMap[inq.investorDetails?.frequency || ''] || 'monthly',
-                              startDate: new Date().toISOString().slice(0, 10),
-                              notes: '',
-                            });
-                            setShowAcceptModal(inq);
-                          }}
-                          className="text-emerald-600 hover:text-emerald-700 text-sm flex items-center gap-1 font-medium"
-                        >
-                          <CheckCircle className="w-4 h-4" />Accept
-                        </button>
-                      )}
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {investorInquiries.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
-                    No investor inquiries found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Accept Modal */}
@@ -224,7 +284,7 @@ export default function InvestorInquiries() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-1">Accept Investment</h3>
             <p className="text-sm text-slate-500 mb-4">
-              Accept <span className="font-medium">{showAcceptModal.name}</span>'s investment and move to active.
+              Accept <span className="font-medium">{showAcceptModal.name}</span>&apos;s investment and move to active.
             </p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>

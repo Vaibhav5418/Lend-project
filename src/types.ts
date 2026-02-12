@@ -90,7 +90,7 @@ export type PaymentMode = 'Bank Transfer' | 'Cheque' | 'Cash' | 'UPI' | 'NEFT' |
 export type LoanStatus = 'Active' | 'Closed' | 'Defaulted' | 'Restructured';
 export type CollectionStatus = 'Received' | 'Pending' | 'Overdue' | 'Partial' | 'Defaulted';
 export type ProposalStatus = 'Sent' | 'Accepted' | 'Rejected' | 'Counter' | 'Expired';
-export type RepaymentType = 'EMI' | 'Interest-Only' | 'Bullet';
+export type RepaymentType = 'Interest-Only' | 'Bullet';
 export type PayoutFrequency = 'monthly' | 'quarterly' | 'on_maturity';
 export type RateType = 'monthly' | 'yearly';
 
@@ -166,7 +166,6 @@ export interface BorrowerLoan {
   interestRateType: RateType;
   tenureMonths: number;
   repaymentType: RepaymentType;
-  emiAmount: number;
   monthlyInterest: number;
   totalInterest: number;
   totalRepayable: number;
