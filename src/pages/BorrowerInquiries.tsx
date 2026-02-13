@@ -16,6 +16,7 @@ function formatAmount(amount: number): string {
 const STAGE_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
   { key: 'NEW', label: 'New', color: 'bg-blue-50 border-blue-200', dot: 'bg-blue-500', cardBorder: 'border-l-blue-500' },
   { key: 'CONTACTED', label: 'Contacted', color: 'bg-sky-50 border-sky-200', dot: 'bg-sky-500', cardBorder: 'border-l-sky-500' },
+  { key: 'MEETING', label: 'Meeting', color: 'bg-cyan-50 border-cyan-200', dot: 'bg-cyan-500', cardBorder: 'border-l-cyan-500' },
   { key: 'DOCS_PENDING', label: 'Docs Pending', color: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500', cardBorder: 'border-l-amber-500' },
   { key: 'VERIFIED', label: 'Verified', color: 'bg-violet-50 border-violet-200', dot: 'bg-violet-500', cardBorder: 'border-l-violet-500' },
   { key: 'PROPOSED', label: 'Proposed', color: 'bg-indigo-50 border-indigo-200', dot: 'bg-indigo-500', cardBorder: 'border-l-indigo-500' },
