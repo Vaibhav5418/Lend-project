@@ -10,24 +10,42 @@ type InquiryCacheState = {
 };
 
 const InquiryCacheContext = createContext<InquiryCacheState | null>(null);
+const CACHE_KEY = 'lend_inquiries_cache';
 
 export function InquiryCacheProvider({ children }: { children: ReactNode }) {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [inquiries, setInquiries] = useState<Inquiry[]>(() => {
+    // Rehydrate from localStorage on initial load
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem(CACHE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(inquiries.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    setLoading(true);
+    // If we have cached data, don't show full loading screen
+    if (inquiries.length === 0) setLoading(true);
+
     setError(null);
     try {
       const data = await api.getInquiries();
       setInquiries(data);
+      // Save to localStorage for next time
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load inquiries');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [inquiries.length]);
 
   useEffect(() => {
     refetch();

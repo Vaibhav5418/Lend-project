@@ -6,6 +6,18 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react-markdown', 'remark-gfm', 'micromark-util-subtokenize'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     port: 5173,
     host: true,
