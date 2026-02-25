@@ -4,7 +4,6 @@ import { Eye, Phone, Mail, Pencil, GripVertical } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import { api } from '../api/client';
 import type { Inquiry } from '../types';
-import { formatCurrencyShort } from '../utils/formatters';
 
 function formatAmount(amount: number): string {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
@@ -228,8 +227,8 @@ export default function InvestorInquiries() {
                         </div>
                       </div>
                       <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
-                          inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                            'bg-gray-100 text-gray-600'
+                        inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
+                          'bg-gray-100 text-gray-600'
                         }`}>{inq.priority}</span>
                     </div>
                     {stageUpdating === inq.id && (
