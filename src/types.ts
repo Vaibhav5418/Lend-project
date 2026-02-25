@@ -71,6 +71,7 @@ export interface Inquiry {
     loanAmount: number;
     tenure: number;
     proposedInterest: number;
+    frequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
   };
   investorDetails?: {
     investmentAmount: number;
@@ -166,6 +167,7 @@ export interface BorrowerLoan {
   interestRateType: RateType;
   tenureMonths: number;
   repaymentType: RepaymentType;
+  repaymentFrequency: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
   monthlyInterest: number;
   totalInterest: number;
   totalRepayable: number;
@@ -203,6 +205,7 @@ export interface ProposalHistory {
   proposedLoanAmount: number;
   proposedInterestRate: number;
   proposedTenure: number;
+  proposedFrequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
   notes: string;
   action: string;
   timestamp: string;
@@ -218,6 +221,8 @@ export interface Proposal {
   proposedLoanAmount: number;
   proposedInterestRate: number;
   proposedTenure: number;
+  originalFrequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
+  proposedFrequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
   notes: string;
   status: ProposalStatus;
   sentAt: string;

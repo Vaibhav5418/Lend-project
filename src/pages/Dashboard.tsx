@@ -18,12 +18,10 @@ import {
 } from 'recharts';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import DashboardSkeleton from '../components/DashboardSkeleton';
+import { formatCurrencyShort } from '../utils/formatters';
 
 const formatFunding = (amount: number): string => {
-  if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
-  if (amount >= 1_00_000) return `₹ ${(amount / 1_00_000).toFixed(1)} L`;
-  if (amount >= 1_000) return `₹ ${(amount / 1_000).toFixed(1)} K`;
-  return `₹ ${amount.toLocaleString('en-IN')}`;
+  return formatCurrencyShort(amount);
 };
 
 export default function Dashboard() {

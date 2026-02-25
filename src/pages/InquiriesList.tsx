@@ -4,6 +4,7 @@ import { Filter, Eye, Phone, Mail, Pencil } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import InquiriesListSkeleton from '../components/InquiriesListSkeleton';
 import { InquiryType, Priority, STAGE_LABELS } from '../types';
+import { formatCurrencyShort } from '../utils/formatters';
 
 function formatLoanAmount(amount: number): string {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(amount % 1_00_00_000 === 0 ? 0 : 1)} Cr`;
@@ -14,7 +15,7 @@ function formatLoanAmount(amount: number): string {
 function formatTurnover(turnover: string | undefined): string {
   if (!turnover || !turnover.trim()) return '—';
   const num = Number(String(turnover).replace(/,/g, '').trim());
-  if (!Number.isNaN(num) && num >= 0) return formatLoanAmount(num);
+  if (!Number.isNaN(num) && num >= 0) return formatCurrencyShort(num);
   return turnover;
 }
 
@@ -175,18 +176,16 @@ export default function InquiriesList() {
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inquiry.type === 'Borrower' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${inquiry.type === 'Borrower' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      }`}>
                       {inquiry.type}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inquiry.priority === 'Hot' ? 'bg-red-100 text-red-700' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${inquiry.priority === 'Hot' ? 'bg-red-100 text-red-700' :
                       inquiry.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                        'bg-gray-100 text-gray-700'
+                      }`}>
                       {inquiry.priority}
                     </span>
                   </td>

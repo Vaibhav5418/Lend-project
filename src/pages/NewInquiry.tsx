@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { api } from '../api/client';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import { DEFAULT_STAGE, InquiryType, Priority, Source } from '../types';
+import { formatIndianShort } from '../utils/formatters';
 
 export default function NewInquiry() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function NewInquiry() {
     expectedInterest: '',
     investorTenure: '',
     investorFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
+    borrowerFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,20 +53,21 @@ export default function NewInquiry() {
       turnover: formData.turnover || undefined,
       ...(inquiryType === 'Borrower'
         ? {
-            borrowerDetails: {
-              loanAmount: Number(formData.loanAmount) || 0,
-              tenure: Number(formData.tenure) || 0,
-              proposedInterest: Number(formData.proposedInterest) || 0,
-            },
-          }
+          borrowerDetails: {
+            loanAmount: Number(formData.loanAmount) || 0,
+            tenure: Number(formData.tenure) || 0,
+            proposedInterest: Number(formData.proposedInterest) || 0,
+            frequency: formData.borrowerFrequency,
+          },
+        }
         : {
-            investorDetails: {
-              investmentAmount: Number(formData.investmentAmount) || 0,
-              expectedInterest: Number(formData.expectedInterest) || 0,
-              tenure: Number(formData.investorTenure) || 0,
-              frequency: formData.investorFrequency,
-            },
-          }),
+          investorDetails: {
+            investmentAmount: Number(formData.investmentAmount) || 0,
+            expectedInterest: Number(formData.expectedInterest) || 0,
+            tenure: Number(formData.investorTenure) || 0,
+            frequency: formData.investorFrequency,
+          },
+        }),
     };
     try {
       await api.createInquiry(body);
@@ -100,22 +103,20 @@ export default function NewInquiry() {
               <button
                 type="button"
                 onClick={() => setInquiryType('Borrower')}
-                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${
-                  inquiryType === 'Borrower'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
+                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${inquiryType === 'Borrower'
+                  ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                  }`}
               >
                 Borrower
               </button>
               <button
                 type="button"
                 onClick={() => setInquiryType('Investor')}
-                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${
-                  inquiryType === 'Investor'
-                    ? 'border-purple-600 bg-purple-50 text-purple-700 font-medium'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
+                className={`flex-1 px-6 py-3 rounded-lg border-2 transition-all ${inquiryType === 'Investor'
+                  ? 'border-purple-600 bg-purple-50 text-purple-700 font-medium'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                  }`}
               >
                 Investor
               </button>
@@ -221,6 +222,11 @@ export default function NewInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="500000"
                     />
+                    {formData.loanAmount && (
+                      <p className="mt-1 text-xs text-blue-600 font-medium ml-1">
+                        {formatIndianShort(formData.loanAmount)}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -245,6 +251,11 @@ export default function NewInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g. 5000000"
                     />
+                    {formData.turnover && (
+                      <p className="mt-1 text-xs text-slate-500 font-medium ml-1">
+                        {formatIndianShort(formData.turnover)}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -260,6 +271,20 @@ export default function NewInquiry() {
                       placeholder="12.5"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Repayment Frequency</label>
+                    <select
+                      value={formData.borrowerFrequency}
+                      onChange={(e) => setFormData({ ...formData, borrowerFrequency: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Half-Yearly">Half-Yearly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  </div>
                 </>
               ) : (
                 <>
@@ -274,6 +299,11 @@ export default function NewInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="1000000"
                     />
+                    {formData.investmentAmount && (
+                      <p className="mt-1 text-xs text-purple-600 font-medium ml-1">
+                        {formatIndianShort(formData.investmentAmount)}
+                      </p>
+                    )}
                   </div>
 
                   <div>

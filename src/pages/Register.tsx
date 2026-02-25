@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Landmark } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
@@ -52,12 +52,10 @@ export default function Register() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-slate-50">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img
-              src="https://aryanannagroup.com/Screenshot%202025-11-22%20at%2013.01.36.png"
-              alt="Aryan (Anna) Group"
-              className="h-10 w-10 object-contain rounded-lg flex-shrink-0"
-            />
-            <span className="text-xl font-bold text-slate-900">Aryan (Anna) Group</span>
+            <div className="h-10 w-10 flex-shrink-0 rounded-lg bg-emerald-600 flex items-center justify-center">
+              <Landmark className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-slate-900">Loanly</span>
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Create an account</h2>
@@ -152,13 +150,11 @@ export default function Register() {
       {/* Right: Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-800 via-slate-800 to-slate-900 text-white p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src="https://aryanannagroup.com/Screenshot%202025-11-22%20at%2013.01.36.png"
-            alt="Aryan (Anna) Group"
-            className="h-12 w-12 object-contain rounded-xl flex-shrink-0"
-          />
+          <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center">
+            <Landmark className="w-7 h-7 text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Aryan (Anna) Group</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Loanly</h1>
             <p className="text-slate-400 text-sm">CRM & Inquiry Hub</p>
           </div>
         </div>

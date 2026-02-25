@@ -5,12 +5,10 @@ import { useInquiryCache } from '../context/InquiryCacheContext';
 import { api } from '../api/client';
 import type { Inquiry } from '../types';
 import ProposalModal from '../components/ProposalModal';
+import { formatCurrencyShort } from '../utils/formatters';
 
 function formatAmount(amount: number): string {
-  if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
-  if (amount >= 1_00_000) return `₹ ${(amount / 1_00_000).toFixed(1)} L`;
-  if (amount >= 1_000) return `₹ ${(amount / 1_000).toFixed(1)} K`;
-  return `₹ ${amount.toLocaleString('en-IN')}`;
+  return formatCurrencyShort(amount);
 }
 
 const STAGE_COLUMNS: { key: string; label: string; color: string; dot: string; cardBorder: string }[] = [
@@ -44,6 +42,7 @@ export default function BorrowerInquiries() {
     interestRateType: 'yearly' as 'monthly' | 'yearly',
     tenureMonths: '',
     repaymentType: 'Interest-Only' as 'Interest-Only' | 'Bullet',
+    repaymentFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
     startDate: new Date().toISOString().slice(0, 10),
     notes: '',
   });
@@ -89,6 +88,7 @@ export default function BorrowerInquiries() {
       interestRateType: 'yearly',
       tenureMonths: String(inq.borrowerDetails?.tenure || ''),
       repaymentType: 'Interest-Only',
+      repaymentFrequency: inq.borrowerDetails?.frequency || 'Monthly',
       startDate: new Date().toISOString().slice(0, 10),
       notes: '',
     });
@@ -111,6 +111,7 @@ export default function BorrowerInquiries() {
         interestRateType: approveForm.interestRateType,
         tenureMonths: Number(approveForm.tenureMonths) || approveInquiry.borrowerDetails?.tenure || 0,
         repaymentType: approveForm.repaymentType,
+        repaymentFrequency: approveForm.repaymentFrequency,
         startDate: approveForm.startDate,
         loanPurpose: approveInquiry.notes || '',
         notes: approveForm.notes,
@@ -196,9 +197,8 @@ export default function BorrowerInquiries() {
               onDragLeave={(e) => handleDragLeave(e, col.key)}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.key)}
-              className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[75vh] transition-all duration-150 ${
-                dragOverCol === col.key && draggingId ? 'ring-2 ring-sky-400 ring-offset-2 scale-[1.01]' : ''
-              }`}
+              className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[75vh] transition-all duration-150 ${dragOverCol === col.key && draggingId ? 'ring-2 ring-sky-400 ring-offset-2 scale-[1.01]' : ''
+                }`}
             >
               {/* Column Header */}
               <div className="px-4 py-3 border-b border-inherit">
@@ -224,9 +224,8 @@ export default function BorrowerInquiries() {
                     draggable
                     onDragStart={(e) => handleDragStart(e, inq.id)}
                     onDragEnd={handleDragEnd}
-                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-all p-3 ${
-                      draggingId === inq.id ? 'opacity-40 scale-95' : ''
-                    } ${stageUpdating === inq.id ? 'opacity-60 pointer-events-none' : ''} cursor-grab active:cursor-grabbing`}
+                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-all p-3 ${draggingId === inq.id ? 'opacity-40 scale-95' : ''
+                      } ${stageUpdating === inq.id ? 'opacity-60 pointer-events-none' : ''} cursor-grab active:cursor-grabbing`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-1 mb-1.5">
@@ -237,11 +236,10 @@ export default function BorrowerInquiries() {
                           <p className="text-xs text-sky-600 font-mono">{inq.id}</p>
                         </div>
                       </div>
-                      <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
+                      <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
                         inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>{inq.priority}</span>
+                          'bg-gray-100 text-gray-600'
+                        }`}>{inq.priority}</span>
                     </div>
                     {stageUpdating === inq.id && (
                       <p className="text-xs text-sky-600 font-medium mb-1">Moving...</p>
@@ -259,8 +257,9 @@ export default function BorrowerInquiries() {
                         <div><span className="text-slate-400">Amount:</span> <span className="text-slate-800 font-semibold">{formatAmount(inq.borrowerDetails.loanAmount)}</span></div>
                         <div><span className="text-slate-400">Interest:</span> <span className="text-slate-700">{inq.borrowerDetails.proposedInterest}%</span></div>
                         <div><span className="text-slate-400">Tenure:</span> <span className="text-slate-700">{inq.borrowerDetails.tenure} mo</span></div>
+                        <div><span className="text-slate-400">Freq:</span> <span className="text-slate-700">{inq.borrowerDetails.frequency || 'Monthly'}</span></div>
                         {inq.turnover && (
-                          <div><span className="text-slate-400">Turnover:</span> <span className="text-slate-700">{inq.turnover}</span></div>
+                          <div className="col-span-2"><span className="text-slate-400">Turnover:</span> <span className="text-slate-700">{inq.turnover}</span></div>
                         )}
                       </div>
                     )}
@@ -346,6 +345,19 @@ export default function BorrowerInquiries() {
                 >
                   <option value="Interest-Only">Interest-Only</option>
                   <option value="Bullet">Bullet</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Repayment Frequency</label>
+                <select
+                  value={approveForm.repaymentFrequency}
+                  onChange={(e) => setApproveForm({ ...approveForm, repaymentFrequency: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm"
+                >
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="Half-Yearly">Half-Yearly</option>
+                  <option value="Yearly">Yearly</option>
                 </select>
               </div>
               <div>

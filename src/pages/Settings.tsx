@@ -29,11 +29,10 @@ export default function Settings() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
-                    activeTab === tab.id
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${activeTab === tab.id
                       ? 'bg-blue-50 text-blue-700 font-medium'
                       : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-sm">{tab.label}</span>
@@ -135,7 +134,7 @@ export default function Settings() {
                       <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="text"
-                        defaultValue="Aryan (Anna) Group Finance"
+                        defaultValue="Loanly"
                         className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>

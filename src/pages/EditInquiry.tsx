@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import type { Inquiry } from '../types';
 import { InquiryType, Priority, Source } from '../types';
+import { formatIndianShort } from '../utils/formatters';
 
 export default function EditInquiry() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +32,7 @@ export default function EditInquiry() {
     expectedInterest: '',
     investorTenure: '',
     investorFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
+    borrowerFrequency: 'Monthly' as 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly',
   });
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function EditInquiry() {
           expectedInterest: data.investorDetails?.expectedInterest != null ? String(data.investorDetails.expectedInterest) : '',
           investorTenure: data.investorDetails?.tenure != null ? String(data.investorDetails.tenure) : '',
           investorFrequency: data.investorDetails?.frequency ?? 'Monthly',
+          borrowerFrequency: data.borrowerDetails?.frequency ?? 'Monthly',
         });
       })
       .catch((e) => setError(e.message))
@@ -78,20 +81,21 @@ export default function EditInquiry() {
       turnover: formData.turnover || undefined,
       ...(inquiry.type === 'Borrower'
         ? {
-            borrowerDetails: {
-              loanAmount: Number(formData.loanAmount) || 0,
-              tenure: Number(formData.tenure) || 0,
-              proposedInterest: Number(formData.proposedInterest) || 0,
-            },
-          }
+          borrowerDetails: {
+            loanAmount: Number(formData.loanAmount) || 0,
+            tenure: Number(formData.tenure) || 0,
+            proposedInterest: Number(formData.proposedInterest) || 0,
+            frequency: formData.borrowerFrequency,
+          },
+        }
         : {
-            investorDetails: {
-              investmentAmount: Number(formData.investmentAmount) || 0,
-              expectedInterest: Number(formData.expectedInterest) || 0,
-              tenure: Number(formData.investorTenure) || 0,
-              frequency: formData.investorFrequency,
-            },
-          }),
+          investorDetails: {
+            investmentAmount: Number(formData.investmentAmount) || 0,
+            expectedInterest: Number(formData.expectedInterest) || 0,
+            tenure: Number(formData.investorTenure) || 0,
+            frequency: formData.investorFrequency,
+          },
+        }),
     };
     try {
       await api.updateInquiry(id, body);
@@ -216,6 +220,11 @@ export default function EditInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="500000"
                     />
+                    {formData.loanAmount && (
+                      <p className="mt-1 text-xs text-blue-600 font-medium ml-1">
+                        {formatIndianShort(formData.loanAmount)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tenure (months)</label>
@@ -236,6 +245,11 @@ export default function EditInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g. 5000000"
                     />
+                    {formData.turnover && (
+                      <p className="mt-1 text-xs text-slate-500 font-medium ml-1">
+                        {formatIndianShort(formData.turnover)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Proposed Interest Rate (%)</label>
@@ -247,6 +261,19 @@ export default function EditInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="12.5"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Repayment Frequency</label>
+                    <select
+                      value={formData.borrowerFrequency}
+                      onChange={(e) => setFormData({ ...formData, borrowerFrequency: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Half-Yearly">Half-Yearly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
                   </div>
                 </>
               ) : (
@@ -260,6 +287,11 @@ export default function EditInquiry() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="1000000"
                     />
+                    {formData.investmentAmount && (
+                      <p className="mt-1 text-xs text-purple-600 font-medium ml-1">
+                        {formatIndianShort(formData.investmentAmount)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Expected Interest Rate (%)</label>

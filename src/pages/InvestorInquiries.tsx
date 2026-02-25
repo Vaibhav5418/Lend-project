@@ -4,6 +4,7 @@ import { Eye, Phone, Mail, Pencil, GripVertical } from 'lucide-react';
 import { useInquiryCache } from '../context/InquiryCacheContext';
 import { api } from '../api/client';
 import type { Inquiry } from '../types';
+import { formatCurrencyShort } from '../utils/formatters';
 
 function formatAmount(amount: number): string {
   if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
@@ -187,9 +188,8 @@ export default function InvestorInquiries() {
               onDragLeave={(e) => handleDragLeave(e, col.key)}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.key)}
-              className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[75vh] transition-all duration-150 ${
-                dragOverCol === col.key && draggingId ? 'ring-2 ring-violet-400 ring-offset-2 scale-[1.01]' : ''
-              }`}
+              className={`flex-shrink-0 w-[300px] rounded-xl border ${col.color} flex flex-col max-h-[75vh] transition-all duration-150 ${dragOverCol === col.key && draggingId ? 'ring-2 ring-violet-400 ring-offset-2 scale-[1.01]' : ''
+                }`}
             >
               {/* Column Header */}
               <div className="px-4 py-3 border-b border-inherit">
@@ -215,9 +215,8 @@ export default function InvestorInquiries() {
                     draggable
                     onDragStart={(e) => handleDragStart(e, inq.id)}
                     onDragEnd={handleDragEnd}
-                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-all p-3 ${
-                      draggingId === inq.id ? 'opacity-40 scale-95' : ''
-                    } ${stageUpdating === inq.id ? 'opacity-60 pointer-events-none' : ''} cursor-grab active:cursor-grabbing`}
+                    className={`bg-white rounded-lg border border-l-4 ${col.cardBorder} shadow-sm hover:shadow-md transition-all p-3 ${draggingId === inq.id ? 'opacity-40 scale-95' : ''
+                      } ${stageUpdating === inq.id ? 'opacity-60 pointer-events-none' : ''} cursor-grab active:cursor-grabbing`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-1 mb-1.5">
@@ -228,11 +227,10 @@ export default function InvestorInquiries() {
                           <p className="text-xs text-violet-600 font-mono">{inq.id}</p>
                         </div>
                       </div>
-                      <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
-                        inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>{inq.priority}</span>
+                      <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${inq.priority === 'Hot' ? 'bg-red-100 text-red-700' :
+                          inq.priority === 'Warm' ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-100 text-gray-600'
+                        }`}>{inq.priority}</span>
                     </div>
                     {stageUpdating === inq.id && (
                       <p className="text-xs text-violet-600 font-medium mb-1">Moving...</p>

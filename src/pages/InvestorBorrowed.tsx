@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { Filter, Eye, Calendar, TrendingUp, Users, CreditCard } from 'lucide-react';
 import { api } from '../api/client';
 import type { InvestorInvestment, InvestorPayment, UpcomingPayout, PaymentMode } from '../types';
+import { formatIndianShort, formatCurrencyShort } from '../utils/formatters';
 
 const PAYMENT_MODES: PaymentMode[] = ['Bank Transfer', 'Cheque', 'Cash', 'UPI', 'NEFT', 'RTGS', 'Other'];
 
 function formatAmount(amount: number): string {
-  if (amount >= 1_00_00_000) return `₹ ${(amount / 1_00_00_000).toFixed(1)} Cr`;
-  if (amount >= 1_00_000) return `₹ ${(amount / 1_00_000).toFixed(1)} L`;
-  if (amount >= 1_000) return `₹ ${(amount / 1_000).toFixed(1)} K`;
-  return `₹ ${amount.toLocaleString('en-IN')}`;
+  return formatCurrencyShort(amount);
 }
 
 function formatDate(d: string | undefined): string {
@@ -234,11 +232,10 @@ export default function InvestorBorrowed() {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 capitalize">{inv.payoutFrequency?.replace('_', ' ')}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatDate(inv.maturityDate)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inv.status === 'Active' ? 'bg-emerald-100 text-emerald-700' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${inv.status === 'Active' ? 'bg-emerald-100 text-emerald-700' :
                       inv.status === 'Matured' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>{inv.status}</span>
+                        'bg-slate-100 text-slate-700'
+                      }`}>{inv.status}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -419,11 +416,21 @@ export default function InvestorBorrowed() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Interest Paid (₹)</label>
                   <input type="number" value={payForm.interestPaid} onChange={(e) => setPayForm({ ...payForm, interestPaid: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                  {payForm.interestPaid && (
+                    <p className="mt-1 text-xs text-violet-600 font-medium ml-1">
+                      {formatIndianShort(payForm.interestPaid)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Principal Paid (₹)</label>
                   <input type="number" value={payForm.principalPaid} onChange={(e) => setPayForm({ ...payForm, principalPaid: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="0 (on maturity)" />
+                  {payForm.principalPaid && (
+                    <p className="mt-1 text-xs text-violet-600 font-medium ml-1">
+                      {formatIndianShort(payForm.principalPaid)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Payment Mode</label>
